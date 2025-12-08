@@ -1,0 +1,5 @@
+{
+  "name": "Smart Content System",
+  "description": "A comprehensive AI-powered content generation system with Persian RTL support, built on Cloudflare Workers and D1.",
+  "requestFramePermissions": []
+}

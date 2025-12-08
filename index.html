@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl" class="scroll-smooth">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>سیستم تولید محتوای هوشمند</title>
+    <!-- Vazirmatn Font for Persian -->
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Vazirmatn', 'sans-serif'],
+            },
+            colors: {
+              primary: {
+                50: '#eff6ff',
+                100: '#dbeafe',
+                200: '#bfdbfe',
+                300: '#93c5fd',
+                400: '#60a5fa',
+                500: '#3b82f6',
+                600: '#2563eb',
+                700: '#1d4ed8',
+                800: '#1e40af',
+                900: '#1e3a8a',
+              },
+              slate: {
+                850: '#172033', // Custom dark shade
+              }
+            },
+            animation: {
+              'page-enter': 'pageEnter 0.6s cubic-bezier(0.16, 1, 0.3, 1)',
+              'card-enter': 'cardEnter 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
+              'slide-in': 'slideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+              'slide-up': 'slideUp 0.6s ease-out forwards',
+              'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+              'float': 'float 3s ease-in-out infinite',
+              'float-delayed': 'float 4s ease-in-out infinite 1s',
+              'blob': 'blob 7s infinite',
+              'shimmer': 'shimmer 2s linear infinite',
+              'text-gradient': 'textGradient 3s ease infinite',
+              'width-grow': 'widthGrow 1s ease-out forwards',
+              'pop-in': 'popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards',
+              'check': 'check 0.5s ease-out forwards',
+              'scan': 'scan 2s ease-in-out infinite',
+              'implode': 'implode 3s ease-in-out infinite',
+              'fade-in': 'fadeIn 0.2s ease-out forwards',
+              'slide-up-out': 'slideUpOut 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards',
+              'slide-up-in': 'slideUpIn 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards',
+            },
+            keyframes: {
+              pageEnter: {
+                '0%': { opacity: '0', transform: 'translateY(10px) scale(0.98)' },
+                '100%': { opacity: '1', transform: 'translateY(0) scale(1)' },
+              },
+              cardEnter: {
+                '0%': { opacity: '0', transform: 'translateY(20px)' },
+                '100%': { opacity: '1', transform: 'translateY(0)' },
+              },
+              slideIn: {
+                '0%': { opacity: '0', transform: 'translateX(-10px)' },
+                '100%': { opacity: '1', transform: 'translateX(0)' },
+              },
+              slideUp: {
+                '0%': { opacity: '0', transform: 'translateY(40px)' },
+                '100%': { opacity: '1', transform: 'translateY(0)' },
+              },
+              float: {
+                '0%, 100%': { transform: 'translateY(0)' },
+                '50%': { transform: 'translateY(-15px)' },
+              },
+              blob: {
+                '0%': { transform: 'translate(0px, 0px) scale(1)' },
+                '33%': { transform: 'translate(30px, -50px) scale(1.1)' },
+                '66%': { transform: 'translate(-20px, 20px) scale(0.9)' },
+                '100%': { transform: 'translate(0px, 0px) scale(1)' },
+              },
+              shimmer: {
+                '0%': { backgroundPosition: '-1000px 0' },
+                '100%': { backgroundPosition: '1000px 0' },
+              },
+              textGradient: {
+                '0%, 100%': { 'background-size': '200% 200%', 'background-position': 'left center' },
+                '50%': { 'background-size': '200% 200%', 'background-position': 'right center' },
+              },
+              widthGrow: {
+                '0%': { width: '0%' },
+                '100%': { width: '100%' },
+              },
+              popIn: {
+                '0%': { opacity: '0', transform: 'scale(0.8)' },
+                '100%': { opacity: '1', transform: 'scale(1)' },
+              },
+              check: {
+                '0%': { transform: 'scale(0) rotate(-45deg)', opacity: '0' },
+                '70%': { transform: 'scale(1.2) rotate(0deg)' },
+                '100%': { transform: 'scale(1) rotate(0deg)', opacity: '1' },
+              },
+              scan: {
+                '0%': { top: '0%', opacity: '0' },
+                '10%': { opacity: '1' },
+                '90%': { opacity: '1' },
+                '100%': { top: '100%', opacity: '0' },
+              },
+              implode: {
+                '0%': { transform: 'translate(140px) scale(1)', opacity: '0' },
+                '50%': { opacity: '1' },
+                '100%': { transform: 'translate(0px) scale(0)', opacity: '0' },
+              },
+              fadeIn: {
+                '0%': { opacity: '0' },
+                '100%': { opacity: '1' },
+              },
+              slideUpOut: {
+                '0%': { transform: 'translateY(0)', opacity: '1' },
+                '100%': { transform: 'translateY(-100%)', opacity: '0' },
+              },
+              slideUpIn: {
+                '0%': { transform: 'translateY(100%)', opacity: '0' },
+                '100%': { transform: 'translateY(0)', opacity: '1' },
+              }
+            },
+            boxShadow: {
+              'glow': '0 0 20px rgba(59, 130, 246, 0.6)',
+              'glow-lg': '0 0 40px rgba(79, 70, 229, 0.4)',
+              'card': '0 2px 10px rgba(0, 0, 0, 0.03)',
+              'card-hover': '0 20px 40px -5px rgba(0, 0, 0, 0.1), 0 10px 20px -6px rgba(0, 0, 0, 0.04)',
+            }
+          },
+        },
+      }
+    </script>
+    <style>
+      body {
+        font-family: 'Vazirmatn', sans-serif;
+        background-color: #f8fafc;
+        overflow-x: hidden;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+      
+      /* Refined Scrollbar */
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent; 
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #cbd5e1; 
+        border-radius: 10px;
+        border: 2px solid transparent;
+        background-clip: content-box;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background-color: #94a3b8; 
+      }
+
+      /* Animation Utilities */
+      .stagger-1 { animation-delay: 100ms; }
+      .stagger-2 { animation-delay: 200ms; }
+      .stagger-3 { animation-delay: 300ms; }
+      .stagger-4 { animation-delay: 400ms; }
+      .stagger-5 { animation-delay: 500ms; }
+      .delay-700 { animation-delay: 700ms; }
+      .delay-1000 { animation-delay: 1000ms; }
+
+      /* Glassmorphism */
+      .glass {
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.5);
+      }
+      
+      .glass-card {
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(16px);
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+      }
+
+      .glass-dark {
+        background: rgba(15, 23, 42, 0.6);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .text-gradient {
+        background-clip: text;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-image: linear-gradient(to right, #2563eb, #7c3aed, #db2777);
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://aistudiocdn.com/react@^19.2.1",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.1/",
+    "react/": "https://aistudiocdn.com/react@^19.2.1/",
+    "@cloudflare/workers-types": "https://aistudiocdn.com/@cloudflare/workers-types@^4.20251205.0",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.31.0",
+    "recharts": "https://aistudiocdn.com/recharts@^3.5.1",
+    "better-sqlite3": "https://aistudiocdn.com/better-sqlite3@^12.5.0",
+    "dotenv/": "https://aistudiocdn.com/dotenv@^17.2.3/",
+    "hono": "https://aistudiocdn.com/hono@^4.10.7",
+    "@hono/node-server/": "https://aistudiocdn.com/@hono/node-server@^1.19.6/",
+    "@hono/node-server": "https://aistudiocdn.com/@hono/node-server@^1.19.6",
+    "fs": "https://aistudiocdn.com/fs@^0.0.1-security"
+  }
+}
+</script>
+</head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>
