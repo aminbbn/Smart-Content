@@ -23,7 +23,12 @@ export default function App() {
   }, []);
 
   const navigate = (view: AppView) => {
-      window.history.pushState({ view }, '', `#${view}`);
+      try {
+        // Wrap in try-catch to prevent SecurityError in some sandboxed iframes
+        window.history.pushState({ view }, '', `#${view}`);
+      } catch (e) {
+        console.warn('Navigation state update failed, proceeding with view change.', e);
+      }
       setCurrentView(view);
       window.scrollTo(0, 0);
   };

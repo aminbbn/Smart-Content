@@ -6,13 +6,18 @@ interface Props {
 }
 
 export default function AuthPage({ onLogin, onBack }: Props) {
-  const [isLogin, setIsLogin] = useState(true);
+  const [mode, setMode] = useState<'login' | 'register'>('login');
   const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+    name: ''
+  });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    // Simulate API call
+    // Simulate API call and success
     setTimeout(() => {
       setLoading(false);
       onLogin();
@@ -20,104 +25,181 @@ export default function AuthPage({ onLogin, onBack }: Props) {
   };
 
   return (
-    <div className="min-h-screen relative flex items-center justify-center p-4 bg-[#0f172a] overflow-hidden" dir="rtl">
-      {/* Dynamic Background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-900/40 to-slate-900/40 z-0"></div>
-      <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] bg-indigo-500/30 rounded-full blur-[100px] animate-pulse-slow"></div>
-      <div className="absolute bottom-[-20%] left-[-10%] w-[500px] h-[500px] bg-blue-500/20 rounded-full blur-[100px] animate-float"></div>
+    <div className="min-h-screen flex font-sans bg-white" dir="rtl">
+      {/* Visual Side (Right Side in RTL) */}
+      <div className="hidden lg:flex lg:w-1/2 bg-slate-900 relative overflow-hidden flex-col justify-between p-16 text-white">
+        {/* Abstract Background */}
+        <div className="absolute inset-0 bg-slate-900">
+            <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5"></div>
+            <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-blue-600/20 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2 animate-pulse-slow"></div>
+            <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-indigo-600/20 rounded-full blur-[100px] translate-y-1/3 -translate-x-1/3 animate-float"></div>
+        </div>
 
-      <div className="relative z-10 w-full max-w-5xl h-[600px] bg-white/10 backdrop-blur-2xl rounded-[2.5rem] shadow-2xl border border-white/20 overflow-hidden flex animate-card-enter">
-        {/* Visual Side (Hidden on Mobile) */}
-        <div className="hidden lg:flex w-1/2 relative flex-col justify-between p-12 overflow-hidden bg-gradient-to-br from-blue-600/90 to-indigo-800/90">
-            <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
-            <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-16 -mt-16"></div>
-            
-            <button onClick={onBack} className="self-start text-white/80 hover:text-white flex items-center gap-2 transition-colors z-20">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
-                بازگشت به خانه
-            </button>
-
-            <div className="relative z-10 space-y-6">
-                <h2 className="text-4xl font-extrabold text-white leading-tight">
-                    {isLogin ? 'خوش آمدید،' : 'شروع مسیر،'}
-                    <br />
-                    <span className="text-blue-200">به آینده تولید محتوا</span>
-                </h2>
-                <p className="text-blue-100 text-lg leading-relaxed max-w-sm">
-                    {isLogin 
-                     ? 'وارد داشبورد خود شوید و مدیریت محتوای هوشمند را از سر بگیرید.' 
-                     : 'حساب کاربری خود را بسازید و از قدرت هوش مصنوعی برای رشد کسب‌وکار خود استفاده کنید.'}
-                </p>
+        {/* Brand & Content */}
+        <div className="relative z-10">
+            <div 
+                className="flex items-center gap-3 mb-20 cursor-pointer group w-fit" 
+                onClick={onBack}
+            >
+                <div className="w-12 h-12 bg-gradient-to-tr from-blue-500 to-indigo-500 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/30 group-hover:scale-105 transition-transform duration-300">
+                    <span className="font-bold text-xl text-white">AI</span>
+                </div>
+                <span className="text-2xl font-extrabold tracking-tight text-white group-hover:text-blue-200 transition-colors">اسمارت کانتنت</span>
             </div>
 
-            <div className="flex gap-4 z-10">
-                <div className="h-1.5 w-8 bg-white rounded-full"></div>
-                <div className="h-1.5 w-8 bg-white/30 rounded-full"></div>
-                <div className="h-1.5 w-8 bg-white/30 rounded-full"></div>
+            <div className="space-y-8 max-w-lg">
+                <h1 className="text-5xl font-extrabold leading-tight tracking-tight">
+                    <span className="block text-blue-400 mb-2">هوش مصنوعی</span>
+                    همکار خلاق شما
+                </h1>
+                <p className="text-lg text-slate-300 leading-relaxed font-light">
+                    با قدرت مدل‌های زبانی پیشرفته، محتوای متنی، اخبار و تحلیل‌های دقیق را در کسری از ثانیه تولید کنید. ما پیچیدگی را حذف کردیم تا شما روی خلاقیت تمرکز کنید.
+                </p>
+                
+                <div className="flex gap-4 pt-4">
+                    <div className="flex -space-x-4 space-x-reverse">
+                        {[1,2,3,4].map(i => (
+                            <div key={i} className="w-12 h-12 rounded-full border-2 border-slate-900 bg-slate-800 flex items-center justify-center text-xs font-bold relative z-10 overflow-hidden">
+                                <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${i*123}`} alt="User" />
+                            </div>
+                        ))}
+                    </div>
+                    <div className="flex flex-col justify-center">
+                        <div className="flex items-center gap-1">
+                            {[1,2,3,4,5].map(i => <svg key={i} className="w-4 h-4 text-amber-400 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00.951-.69l1.07-3.292z"/></svg>)}
+                        </div>
+                        <span className="text-sm text-slate-400">مورد اعتماد +۵۰۰ تیم برتر</span>
+                    </div>
+                </div>
             </div>
         </div>
 
-        {/* Form Side */}
-        <div className="w-full lg:w-1/2 p-8 md:p-12 bg-white flex flex-col justify-center relative">
-            <div className="absolute top-6 right-6 lg:hidden">
-                <button onClick={onBack} className="text-slate-400 hover:text-slate-600">✕</button>
+        {/* Footer Links */}
+        <div className="relative z-10 flex justify-between text-sm text-slate-500 border-t border-white/10 pt-8 mt-auto">
+            <span>© ۱۴۰۳ اسمارت کانتنت</span>
+            <div className="flex gap-6">
+                <button className="hover:text-white transition-colors">حریم خصوصی</button>
+                <button className="hover:text-white transition-colors">قوانین و مقررات</button>
+            </div>
+        </div>
+      </div>
+
+      {/* Form Side */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-white relative">
+        <button 
+            onClick={onBack}
+            className="absolute top-8 left-8 text-slate-400 hover:text-slate-800 flex items-center gap-2 transition-colors text-sm font-bold bg-slate-50 px-4 py-2 rounded-xl hover:bg-slate-100"
+        >
+            بازگشت
+            <svg className="w-4 h-4 rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+        </button>
+
+        <div className="w-full max-w-[400px] space-y-10 animate-slide-up">
+            <div className="text-center space-y-3">
+                <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">
+                    {mode === 'login' ? 'ورود به حساب کاربری' : 'ساخت حساب جدید'}
+                </h2>
+                <p className="text-slate-500 font-medium">
+                    {mode === 'login' 
+                        ? 'به پنل مدیریت محتوای خود خوش آمدید' 
+                        : 'همین حالا شروع کنید، کاملا رایگان'
+                    }
+                </p>
             </div>
 
-            <div className="max-w-sm mx-auto w-full space-y-8">
-                <div className="text-center lg:text-right">
-                    <h3 className="text-3xl font-extrabold text-slate-800 mb-2">{isLogin ? 'ورود به حساب' : 'ایجاد حساب کاربری'}</h3>
-                    <p className="text-slate-400 text-sm">اطلاعات خود را برای دسترسی وارد کنید</p>
+            {/* Mode Switcher */}
+            <div className="bg-slate-100 p-1.5 rounded-2xl flex relative shadow-inner">
+                <div 
+                    className={`absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] bg-white rounded-xl shadow-sm transition-all duration-500 cubic-bezier(0.4, 0, 0.2, 1) ${mode === 'login' ? 'right-1.5' : 'right-[calc(50%+1.5px)]'}`}
+                ></div>
+                <button 
+                    onClick={() => setMode('login')}
+                    className={`flex-1 py-3 text-sm font-bold rounded-xl relative z-10 transition-colors duration-300 ${mode === 'login' ? 'text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
+                >
+                    ورود
+                </button>
+                <button 
+                    onClick={() => setMode('register')}
+                    className={`flex-1 py-3 text-sm font-bold rounded-xl relative z-10 transition-colors duration-300 ${mode === 'register' ? 'text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
+                >
+                    ثبت نام
+                </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-6">
+                {mode === 'register' && (
+                    <div className="animate-fade-in">
+                        <label className="block text-xs font-bold text-slate-700 mb-2 mr-1">نام و نام خانوادگی</label>
+                        <div className="relative group">
+                            <input 
+                                type="text" 
+                                className="w-full pl-4 pr-12 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10 outline-none transition-all font-medium text-slate-800 placeholder-slate-400 group-hover:bg-slate-100"
+                                placeholder="مثال: علی محمدی"
+                                value={formData.name}
+                                onChange={e => setFormData({...formData, name: e.target.value})}
+                            />
+                            <div className="absolute right-4 top-4 text-slate-400 group-focus-within:text-blue-500 transition-colors">
+                                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-2 mr-1">آدرس ایمیل</label>
+                    <div className="relative group">
+                        <input 
+                            type="email" 
+                            className="w-full pl-4 pr-12 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10 outline-none transition-all font-medium text-slate-800 placeholder-slate-400 group-hover:bg-slate-100"
+                            placeholder="name@example.com"
+                            value={formData.email}
+                            onChange={e => setFormData({...formData, email: e.target.value})}
+                        />
+                        <div className="absolute right-4 top-4 text-slate-400 group-focus-within:text-blue-500 transition-colors">
+                            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" /></svg>
+                        </div>
+                    </div>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-5">
-                    {!isLogin && (
-                         <div className="animate-slide-up">
-                            <label className="block text-sm font-bold text-slate-700 mb-2">نام کامل</label>
-                            <input type="text" className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all font-bold text-slate-800 outline-none" placeholder="نام و نام خانوادگی" />
-                        </div>
-                    )}
-                    
-                    <div>
-                        <label className="block text-sm font-bold text-slate-700 mb-2">آدرس ایمیل</label>
-                        <input type="email" className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all font-bold text-slate-800 outline-none" placeholder="name@company.com" />
-                    </div>
-                    
-                    <div>
-                        <div className="flex justify-between items-center mb-2">
-                             <label className="block text-sm font-bold text-slate-700">رمز عبور</label>
-                             {isLogin && <a href="#" className="text-xs font-bold text-blue-600 hover:underline">فراموشی رمز؟</a>}
-                        </div>
-                        <input type="password" className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all font-bold text-slate-800 outline-none" placeholder="••••••••" />
-                    </div>
-
-                    <button 
-                        type="submit" 
-                        disabled={loading}
-                        className="w-full py-4 bg-blue-600 text-white rounded-xl font-bold text-lg shadow-lg hover:bg-blue-700 hover:shadow-xl transition-all active:scale-95 flex justify-center items-center gap-2"
-                    >
-                        {loading ? (
-                             <>
-                                <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-                                <span>در حال پردازش...</span>
-                             </>
-                        ) : (
-                            isLogin ? 'ورود به سیستم' : 'ثبت نام رایگان'
+                <div>
+                    <div className="flex justify-between items-center mr-1 mb-2">
+                        <label className="block text-xs font-bold text-slate-700">رمز عبور</label>
+                        {mode === 'login' && (
+                            <button type="button" className="text-xs font-bold text-blue-600 hover:text-blue-800 transition-colors">فراموشی رمز؟</button>
                         )}
-                    </button>
-                </form>
-
-                <div className="text-center">
-                    <p className="text-slate-500 text-sm">
-                        {isLogin ? 'حساب کاربری ندارید؟' : 'قبلاً ثبت نام کرده‌اید؟'}
-                        <button 
-                            onClick={() => setIsLogin(!isLogin)}
-                            className="mr-2 font-bold text-blue-600 hover:underline"
-                        >
-                            {isLogin ? 'ثبت نام کنید' : 'وارد شوید'}
-                        </button>
-                    </p>
+                    </div>
+                    <div className="relative group">
+                        <input 
+                            type="password" 
+                            className="w-full pl-4 pr-12 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10 outline-none transition-all font-medium text-slate-800 placeholder-slate-400 group-hover:bg-slate-100"
+                            placeholder="••••••••"
+                            value={formData.password}
+                            onChange={e => setFormData({...formData, password: e.target.value})}
+                        />
+                        <div className="absolute right-4 top-4 text-slate-400 group-focus-within:text-blue-500 transition-colors">
+                            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                        </div>
+                    </div>
                 </div>
-            </div>
+
+                <button 
+                    type="submit" 
+                    disabled={loading}
+                    className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold text-lg shadow-lg shadow-blue-200 hover:shadow-blue-300 hover:-translate-y-1 transition-all active:scale-[0.98] flex items-center justify-center gap-3 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
+                >
+                    {loading ? (
+                        <>
+                            <div className="w-5 h-5 border-3 border-white/30 border-t-white rounded-full animate-spin"></div>
+                            <span>لطفا صبر کنید...</span>
+                        </>
+                    ) : (
+                        <>
+                            <span>{mode === 'login' ? 'ورود به پنل' : 'ساخت حساب رایگان'}</span>
+                            <svg className="w-5 h-5 rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
+                        </>
+                    )}
+                </button>
+            </form>
         </div>
       </div>
     </div>
