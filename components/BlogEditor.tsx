@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Blog } from '../types';
 
@@ -59,12 +60,12 @@ export default function BlogEditor({ blog, onClose, onSave }: BlogEditorProps) {
     };
 
     return (
-        <div className="fixed inset-0 z-50 bg-white flex flex-col">
+        <div className="fixed inset-0 z-50 bg-white flex flex-col" dir="ltr">
             {/* Header */}
             <div className="h-16 border-b border-slate-200 flex items-center justify-between px-6 bg-slate-50">
                 <div className="flex items-center gap-4">
                     <button onClick={onClose} className="text-slate-500 hover:text-slate-800">
-                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
                     </button>
                     <input 
                         value={title} 
@@ -73,7 +74,7 @@ export default function BlogEditor({ blog, onClose, onSave }: BlogEditorProps) {
                     />
                 </div>
                 <div className="flex gap-2">
-                    <button onClick={handleSave} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">ذخیره و بستن</button>
+                    <button onClick={handleSave} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Save & Close</button>
                 </div>
             </div>
 
@@ -85,13 +86,13 @@ export default function BlogEditor({ blog, onClose, onSave }: BlogEditorProps) {
                             onClick={() => setActiveTab('write')}
                             className={`px-6 py-3 text-sm font-medium ${activeTab === 'write' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-slate-600'}`}
                         >
-                            ویرایش متن
+                            Edit
                         </button>
                         <button 
                             onClick={() => setActiveTab('preview')}
                             className={`px-6 py-3 text-sm font-medium ${activeTab === 'preview' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-slate-600'}`}
                         >
-                            پیش‌نمایش
+                            Preview
                         </button>
                     </div>
                     {activeTab === 'write' ? (
@@ -99,25 +100,24 @@ export default function BlogEditor({ blog, onClose, onSave }: BlogEditorProps) {
                             className="flex-grow w-full p-8 resize-none focus:outline-none text-slate-800 leading-relaxed font-sans text-lg"
                             value={content}
                             onChange={e => setContent(e.target.value)}
-                            dir="rtl"
                         />
                     ) : (
-                        <div className="flex-grow w-full p-8 overflow-y-auto prose prose-slate max-w-none" dir="rtl">
+                        <div className="flex-grow w-full p-8 overflow-y-auto prose prose-slate max-w-none">
                             <div className="whitespace-pre-wrap">{content}</div>
                         </div>
                     )}
                 </div>
 
                 {/* Sidebar Tools */}
-                <div className="w-80 border-r border-slate-200 bg-slate-50 flex flex-col overflow-y-auto">
+                <div className="w-80 border-l border-slate-200 bg-slate-50 flex flex-col overflow-y-auto">
                     <div className="p-4">
-                        <h3 className="font-bold text-slate-800 mb-4">دستیار هوشمند</h3>
+                        <h3 className="font-bold text-slate-800 mb-4">Smart Assistant</h3>
                         
                         {/* SEO Tool */}
                         <div className="mb-6 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
                             <div className="flex justify-between items-center mb-2">
-                                <span className="font-semibold text-sm">سئو و کلمات کلیدی</span>
-                                <button onClick={runSeo} disabled={loadingTool} className="text-xs text-blue-600">بررسی</button>
+                                <span className="font-semibold text-sm">SEO & Keywords</span>
+                                <button onClick={runSeo} disabled={loadingTool} className="text-xs text-blue-600">Analyze</button>
                             </div>
                             {seoResult ? (
                                 <div className="space-y-2">
@@ -131,14 +131,14 @@ export default function BlogEditor({ blog, onClose, onSave }: BlogEditorProps) {
                                         {seoResult.suggestions?.slice(0, 3).map((s: string, i: number) => <li key={i}>{s}</li>)}
                                     </ul>
                                 </div>
-                            ) : <p className="text-xs text-slate-400">هنوز بررسی نشده است.</p>}
+                            ) : <p className="text-xs text-slate-400">Not analyzed yet.</p>}
                         </div>
 
                         {/* Social Tool */}
                         <div className="mb-6 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
                             <div className="flex justify-between items-center mb-2">
-                                <span className="font-semibold text-sm">شبکه‌های اجتماعی</span>
-                                <button onClick={runSocial} disabled={loadingTool} className="text-xs text-blue-600">تولید محتوا</button>
+                                <span className="font-semibold text-sm">Social Media</span>
+                                <button onClick={runSocial} disabled={loadingTool} className="text-xs text-blue-600">Generate</button>
                             </div>
                             {socialResult ? (
                                 <div className="space-y-2">
@@ -151,27 +151,27 @@ export default function BlogEditor({ blog, onClose, onSave }: BlogEditorProps) {
                                         <p className="text-slate-600 line-clamp-3">{socialResult.linkedin}</p>
                                     </div>
                                 </div>
-                            ) : <p className="text-xs text-slate-400">هنوز تولید نشده است.</p>}
+                            ) : <p className="text-xs text-slate-400">Not generated yet.</p>}
                         </div>
 
                         {/* Quality Tool */}
                         <div className="mb-6 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
                             <div className="flex justify-between items-center mb-2">
-                                <span className="font-semibold text-sm">کنترل کیفیت</span>
-                                <button onClick={runQuality} disabled={loadingTool} className="text-xs text-blue-600">بررسی</button>
+                                <span className="font-semibold text-sm">Quality Check</span>
+                                <button onClick={runQuality} disabled={loadingTool} className="text-xs text-blue-600">Check</button>
                             </div>
                             {qualityResult ? (
                                 <div className="space-y-2">
                                     <div className="flex justify-between text-xs">
-                                        <span>طبیعی بودن:</span>
+                                        <span>Naturalness:</span>
                                         <span className="font-bold text-green-600">{qualityResult.naturalness_score}%</span>
                                     </div>
                                     <div className="flex justify-between text-xs">
-                                        <span>لحن برند:</span>
+                                        <span>Brand Voice:</span>
                                         <span className="font-bold text-blue-600">{qualityResult.brand_score}%</span>
                                     </div>
                                 </div>
-                            ) : <p className="text-xs text-slate-400">هنوز بررسی نشده است.</p>}
+                            ) : <p className="text-xs text-slate-400">Not checked yet.</p>}
                         </div>
                     </div>
                 </div>

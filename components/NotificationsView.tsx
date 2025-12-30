@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Notification } from '../types';
 
@@ -43,14 +44,14 @@ export default function NotificationsView() {
         <div className="space-y-8 animate-page-enter max-w-4xl mx-auto pb-20">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                    <h2 className="text-2xl font-bold text-slate-800 mb-2">آرشیو اعلان‌ها</h2>
-                    <p className="text-slate-500">تاریخچه پیام‌های سیستم و وضعیت عملیات‌ها</p>
+                    <h2 className="text-2xl font-bold text-slate-800 mb-2">Notifications Archive</h2>
+                    <p className="text-slate-500">History of system messages and operations</p>
                 </div>
                 <button 
                     onClick={markAllRead}
                     className="px-5 py-2.5 bg-white border border-slate-200 text-slate-600 rounded-xl text-sm font-bold hover:bg-slate-50 transition-all shadow-sm hover:shadow-md active:scale-95"
                 >
-                    علامت‌گذاری همه به عنوان خوانده شده
+                    Mark all as read
                 </button>
             </div>
 
@@ -60,8 +61,8 @@ export default function NotificationsView() {
                         <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6 text-slate-300">
                             <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
                         </div>
-                        <p className="text-slate-500 font-bold text-lg">هیچ اعلانی یافت نشد</p>
-                        <p className="text-slate-400 text-sm mt-2">اعلان‌های جدید سیستم در اینجا نمایش داده می‌شوند.</p>
+                        <p className="text-slate-500 font-bold text-lg">No notifications found</p>
+                        <p className="text-slate-400 text-sm mt-2">New system notifications will appear here.</p>
                     </div>
                 ) : (
                     notifications.map((notif, index) => (
@@ -93,7 +94,7 @@ export default function NotificationsView() {
                                     <div className="flex justify-between items-start mb-2">
                                         <h4 className={`text-lg font-bold ${notif.is_read ? 'text-slate-700' : 'text-slate-900'}`}>{notif.title}</h4>
                                         <span className="text-xs text-slate-400 font-bold bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100">
-                                            {new Date(notif.created_at).toLocaleString('fa-IR')}
+                                            {new Date(notif.created_at).toLocaleString('en-US')}
                                         </span>
                                     </div>
                                     <p className="text-slate-600 leading-relaxed mb-4 text-base">{notif.message}</p>
@@ -102,7 +103,7 @@ export default function NotificationsView() {
                                         <div className="flex justify-end pt-2">
                                             <a href={notif.action_url || '#'} className="text-sm font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 px-5 py-2.5 rounded-xl transition-colors flex items-center gap-2">
                                                 {notif.action_text}
-                                                <svg className="w-4 h-4 transform rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
+                                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
                                             </a>
                                         </div>
                                     )}

@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { AgentJob, Writer } from '../types';
 import JobProgress from './JobProgress';
@@ -83,13 +84,13 @@ export default function DailyNewsView() {
         <div className="space-y-8 animate-page-enter w-full">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                    <h2 className="text-2xl font-extrabold text-slate-800 mb-2 tracking-tight">ایجنت اخبار روزانه</h2>
-                    <p className="text-slate-500 font-medium">جمع‌آوری خودکار اخبار و تولید بلاگ خبری</p>
+                    <h2 className="text-2xl font-extrabold text-slate-800 mb-2 tracking-tight">Daily News Agent</h2>
+                    <p className="text-slate-500 font-medium">Automatic news gathering and daily blog generation</p>
                 </div>
                 {(activeJobId || loadingAction) && (
                     <div className="bg-blue-50 text-blue-700 px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 animate-pulse border border-blue-200 shadow-sm">
                         <span className="w-2.5 h-2.5 bg-blue-600 rounded-full shadow-glow"></span>
-                        {loadingAction ? 'در حال ارسال درخواست...' : 'ایجنت در حال فعالیت است...'}
+                        {loadingAction ? 'Sending request...' : 'Agent is active...'}
                     </div>
                 )}
             </div>
@@ -101,7 +102,7 @@ export default function DailyNewsView() {
                             <svg className="w-5 h-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                         </div>
                         <div>
-                            <span className="font-bold block mb-1">خطا در اجرا</span>
+                            <span className="font-bold block mb-1">Execution Error</span>
                             <span className="text-sm opacity-90">{error}</span>
                         </div>
                     </div>
@@ -114,7 +115,7 @@ export default function DailyNewsView() {
                 <button 
                     onClick={() => triggerAction('fetch')}
                     disabled={loadingAction !== null || activeJobId !== null}
-                    className={`relative p-8 rounded-3xl shadow-card transition-all duration-300 group text-right border flex flex-col h-full ${
+                    className={`relative p-8 rounded-3xl shadow-card transition-all duration-300 group text-left border flex flex-col h-full ${
                         (loadingAction || activeJobId) 
                         ? 'opacity-60 cursor-not-allowed bg-slate-50 border-slate-200' 
                         : 'bg-white border-slate-100 hover:border-blue-300 hover:shadow-card-hover hover:-translate-y-1'
@@ -134,15 +135,15 @@ export default function DailyNewsView() {
                         </div>
                         
                         <h3 className="text-2xl font-bold text-slate-800 mb-3 group-hover:text-blue-700 transition-colors">
-                            {loadingAction === 'fetch' ? 'در حال اتصال...' : 'دریافت اخبار جدید'}
+                            {loadingAction === 'fetch' ? 'Connecting...' : 'Fetch New News'}
                         </h3>
                         <p className="text-slate-500 leading-relaxed text-sm mb-6 flex-grow">
-                            جستجو در گوگل، استخراج تیترهای مهم و ذخیره‌سازی اخبار مرتبط با صنعت شما در پایگاه داده.
+                            Search Google, extract headlines, and store industry-relevant news in the database.
                         </p>
                         
                         <div className="flex items-center text-blue-600 font-bold text-sm opacity-0 transform translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
-                            شروع فرآیند
-                            <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+                            Start Process
+                            <svg className="w-4 h-4 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l7-7m0 0l-7-7m7 7H3" /></svg>
                         </div>
                     </div>
                 </button>
@@ -163,14 +164,14 @@ export default function DailyNewsView() {
                             {loadingAction === 'generate-blog' && <span className="w-6 h-6 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></span>}
                         </div>
                         <h3 className="text-2xl font-bold text-slate-800 mb-3 group-hover:text-emerald-700 transition-colors">
-                            {loadingAction === 'generate-blog' ? 'در حال درخواست...' : 'تولید وبلاگ روزانه'}
+                            {loadingAction === 'generate-blog' ? 'Requesting...' : 'Generate Daily Blog'}
                         </h3>
                         <p className="text-slate-500 leading-relaxed text-sm mb-4">
-                            تحلیل اخبار جمع‌آوری شده، انتخاب نویسنده مناسب و نگارش مقاله کامل.
+                            Analyze gathered news, select suitable writer, and draft a complete article.
                         </p>
 
                         <div className="mt-auto mb-4" onClick={(e) => e.stopPropagation()}>
-                            <label className="block text-xs font-bold text-slate-500 mb-1">انتخاب نویسنده</label>
+                            <label className="block text-xs font-bold text-slate-500 mb-1">Select Writer</label>
                             <WriterSelector 
                                 writers={writers}
                                 selectedId={selectedWriter}
@@ -184,8 +185,8 @@ export default function DailyNewsView() {
                             disabled={loadingAction !== null || activeJobId !== null}
                             className="flex items-center justify-center w-full py-3 bg-emerald-50 hover:bg-emerald-500 text-emerald-600 hover:text-white rounded-xl font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            شروع فرآیند تولید
-                            <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+                            Start Generation Process
+                            <svg className="w-4 h-4 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l7-7m0 0l-7-7m7 7H3" /></svg>
                         </button>
                     </div>
                 </div>

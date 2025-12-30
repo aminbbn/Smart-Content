@@ -9,26 +9,8 @@ import { AppView } from './types';
 export default function App() {
   const [currentView, setCurrentView] = useState<AppView>('landing');
 
-  // Handle browser back button basic support
-  useEffect(() => {
-    const handlePopState = (event: PopStateEvent) => {
-        if (event.state && event.state.view) {
-            setCurrentView(event.state.view);
-        } else {
-            setCurrentView('landing');
-        }
-    };
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
-  }, []);
-
+  // Simple view navigation without history API to prevent sandbox errors
   const navigate = (view: AppView) => {
-      try {
-        // Wrap in try-catch to prevent SecurityError in some sandboxed iframes
-        window.history.pushState({ view }, '', `#${view}`);
-      } catch (e) {
-        console.warn('Navigation state update failed, proceeding with view change.', e);
-      }
       setCurrentView(view);
       window.scrollTo(0, 0);
   };

@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Writer } from '../types';
 
@@ -36,7 +37,7 @@ export default function WritersManagement() {
     };
 
     const handleDelete = async (id: number) => {
-        if (!confirm('آیا از حذف این نویسنده مطمئن هستید؟')) return;
+        if (!confirm('Are you sure you want to delete this writer?')) return;
         try {
             await fetch(`/api/writers/${id}`, { method: 'DELETE' });
             fetchWriters();
@@ -76,15 +77,15 @@ export default function WritersManagement() {
         <div className="space-y-8 animate-page-enter">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                    <h2 className="text-2xl font-bold text-slate-800 mb-2">مدیریت نویسندگان</h2>
-                    <p className="text-slate-500">تعریف پرسوناهای مختلف برای تولید محتوا</p>
+                    <h2 className="text-2xl font-bold text-slate-800 mb-2">Writers Management</h2>
+                    <p className="text-slate-500">Define different personas for content generation</p>
                 </div>
                 <button 
                     onClick={() => openModal()}
                     className="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all hover:-translate-y-1 flex items-center gap-2"
                 >
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-                    افزودن نویسنده جدید
+                    Add New Writer
                 </button>
             </div>
 
@@ -98,13 +99,13 @@ export default function WritersManagement() {
                         <div key={writer.id} className={`bg-white rounded-2xl shadow-sm border p-6 flex flex-col hover:shadow-md transition-all animate-card-enter stagger-${index % 5} relative overflow-hidden group ${writer.is_default ? 'border-blue-200 ring-1 ring-blue-100' : 'border-slate-100'}`}>
                             {writer.is_default ? (
                                 <div className="absolute top-0 right-0 bg-blue-600 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl shadow-sm z-10">
-                                    پیش‌فرض
+                                    Default
                                 </div>
                             ) : (
                                 <button 
                                     onClick={() => handleSetDefault(writer.id)}
                                     className="absolute top-3 right-3 text-slate-300 hover:text-yellow-400 transition-colors opacity-0 group-hover:opacity-100"
-                                    title="تنظیم به عنوان پیش‌فرض"
+                                    title="Set as Default"
                                 >
                                     <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
                                 </button>
@@ -130,13 +131,13 @@ export default function WritersManagement() {
                                     onClick={() => openModal(writer)}
                                     className="py-2.5 text-sm font-bold text-blue-600 bg-blue-50 rounded-xl hover:bg-blue-100 transition-colors"
                                 >
-                                    ویرایش
+                                    Edit
                                 </button>
                                 <button 
                                     onClick={() => handleDelete(writer.id)}
                                     className="py-2.5 text-sm font-bold text-red-600 bg-red-50 rounded-xl hover:bg-red-100 transition-colors"
                                 >
-                                    حذف
+                                    Delete
                                 </button>
                             </div>
                         </div>
@@ -149,33 +150,33 @@ export default function WritersManagement() {
                     <div className="bg-white rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl animate-scale-in">
                         <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
                             <h3 className="font-bold text-lg text-slate-800">
-                                {editWriter.id ? 'ویرایش نویسنده' : 'نویسنده جدید'}
+                                {editWriter.id ? 'Edit Writer' : 'New Writer'}
                             </h3>
                             <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600 w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-200 transition-colors">✕</button>
                         </div>
                         <form onSubmit={handleSave} className="p-6 space-y-5">
                             <div>
-                                <label className="block text-sm font-bold text-slate-700 mb-2">نام نویسنده</label>
+                                <label className="block text-sm font-bold text-slate-700 mb-2">Writer Name</label>
                                 <input 
                                     required
                                     className="w-full rounded-xl border-2 border-slate-200 bg-slate-50 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 px-4 py-3 text-slate-800 transition-all font-bold placeholder-slate-400"
                                     value={editWriter.name}
                                     onChange={e => setEditWriter({...editWriter, name: e.target.value})}
-                                    placeholder="مثال: علی محمدی"
+                                    placeholder="e.g. John Smith"
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-bold text-slate-700 mb-2">بیوگرافی و سبک</label>
+                                <label className="block text-sm font-bold text-slate-700 mb-2">Bio & Style</label>
                                 <textarea 
                                     required
                                     className="w-full rounded-xl border-2 border-slate-200 bg-slate-50 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 p-4 text-slate-800 transition-all font-medium placeholder-slate-400 min-h-[120px]"
                                     value={editWriter.bio}
                                     onChange={e => setEditWriter({...editWriter, bio: e.target.value})}
-                                    placeholder="توضیح دهید این نویسنده چه سبکی دارد..."
+                                    placeholder="Describe this writer's style and background..."
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-bold text-slate-700 mb-2">ویژگی‌های شخصیتی (با کاما جدا کنید)</label>
+                                <label className="block text-sm font-bold text-slate-700 mb-2">Personality Traits (comma separated)</label>
                                 <input 
                                     className="w-full rounded-xl border-2 border-slate-200 bg-slate-50 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 px-4 py-3 text-slate-800 transition-all font-bold placeholder-slate-400"
                                     value={(editWriter.personality as any).traits?.join(', ') || ''}
@@ -183,11 +184,11 @@ export default function WritersManagement() {
                                         ...editWriter, 
                                         personality: { traits: e.target.value.split(',').map(t => t.trim()) }
                                     })}
-                                    placeholder="مثال: دقیق، شوخ‌طبع، رسمی"
+                                    placeholder="e.g. Precise, Witty, Formal"
                                 />
                             </div>
                             <div className="pt-4 flex gap-3">
-                                <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-3 border border-slate-200 rounded-xl text-slate-600 font-bold hover:bg-slate-50 transition-colors">انصراف</button>
+                                <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-3 border border-slate-200 rounded-xl text-slate-600 font-bold hover:bg-slate-50 transition-colors">Cancel</button>
                                 <button 
                                     type="submit" 
                                     disabled={saving}
@@ -196,10 +197,10 @@ export default function WritersManagement() {
                                     {saving ? (
                                         <>
                                             <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                                            <span>در حال پردازش...</span>
+                                            <span>Processing...</span>
                                         </>
                                     ) : (
-                                        editWriter.id ? 'ذخیره تغییرات' : 'افزودن نویسنده'
+                                        editWriter.id ? 'Save Changes' : 'Add Writer'
                                     )}
                                 </button>
                             </div>

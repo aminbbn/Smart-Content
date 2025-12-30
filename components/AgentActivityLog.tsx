@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { AgentJob } from '../types';
 
@@ -49,13 +50,13 @@ export default function AgentActivityLog({
   }, [limit, refreshInterval, typeFilter, refreshTrigger]);
 
   if (error) return <div className="text-red-500 text-sm p-4 text-center">{error}</div>;
-  if (jobs.length === 0) return <div className="text-slate-400 text-sm p-4 text-center">هنوز فعالیتی ثبت نشده است.</div>;
+  if (jobs.length === 0) return <div className="text-slate-400 text-sm p-4 text-center">No activity recorded yet.</div>;
 
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-bold text-slate-700 flex items-center gap-2">
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
-        گزارش کامل فعالیت ایجنت‌ها
+        Agent Activity Log
       </h3>
       <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
         {jobs.map((job) => (
@@ -64,17 +65,17 @@ export default function AgentActivityLog({
               <span className={`w-2 h-2 rounded-full ${job.status === 'success' ? 'bg-green-500' : job.status === 'running' ? 'bg-blue-500 animate-pulse' : job.status === 'failed' ? 'bg-red-500' : 'bg-slate-300'}`}></span>
               <div>
                 <p className="font-medium text-slate-800">
-                    {job.agent_type === 'researcher' ? 'جستجوی اخبار' : 
-                     job.agent_type === 'writer' ? 'تولید محتوا' : 
-                     job.agent_type === 'publisher' ? 'انتشار' : job.agent_type}
+                    {job.agent_type === 'researcher' ? 'Research' : 
+                     job.agent_type === 'writer' ? 'Writing' : 
+                     job.agent_type === 'publisher' ? 'Publishing' : job.agent_type}
                 </p>
-                <p className="text-xs text-slate-400">{new Date(job.created_at || job.started_at || Date.now()).toLocaleTimeString('fa-IR')}</p>
+                <p className="text-xs text-slate-400">{new Date(job.created_at || job.started_at || Date.now()).toLocaleTimeString('en-US')}</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
                 <span className="text-xs text-slate-500 hidden sm:block truncate max-w-[150px]">{job.message}</span>
                 <span className={`px-2 py-1 rounded text-xs font-bold ${job.status === 'success' ? 'bg-green-100 text-green-700' : job.status === 'running' ? 'bg-blue-100 text-blue-700' : job.status === 'failed' ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-600'}`}>
-                {job.status === 'success' ? 'تکمیل شده' : job.status === 'running' ? 'در حال اجرا' : job.status === 'failed' ? 'خطا' : 'لغو شده'}
+                {job.status === 'success' ? 'Completed' : job.status === 'running' ? 'Running' : job.status === 'failed' ? 'Failed' : 'Cancelled'}
                 </span>
             </div>
           </div>

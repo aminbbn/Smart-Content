@@ -11,6 +11,21 @@ export const handleNotifications = async (request: Request, db: DatabaseService)
     if (method === 'GET' && pathParts.length === 3) {
         const notifications = await db.query<Notification>('SELECT * FROM notifications ORDER BY created_at DESC LIMIT 50');
         const unreadCount = await db.queryOne<{c: number}>('SELECT count(*) as c FROM notifications WHERE is_read = 0');
+        
+        // MOCK DATA INJECTION
+        if (notifications.length === 0) {
+            const mockNotifications = [
+                { id: 1, type: 'success', category: 'blog', title: 'Blog Published', message: 'Your article "Future of AI" is now live.', is_read: 0, created_at: new Date().toISOString(), action_text: 'View Blog' },
+                { id: 2, type: 'info', category: 'system', title: 'System Update', message: 'Gemini Pro 2.5 is now active.', is_read: 0, created_at: new Date(Date.now() - 3600000).toISOString() },
+                { id: 3, type: 'warning', category: 'news', title: 'Keyword Alert', message: 'High volume of news detected for "Quantum".', is_read: 1, created_at: new Date(Date.now() - 7200000).toISOString(), action_text: 'Check News' },
+                { id: 4, type: 'error', category: 'agent', title: 'Job Failed', message: 'Research agent encountered a timeout.', is_read: 1, created_at: new Date(Date.now() - 86400000).toISOString() }
+            ];
+            return createResponse({
+                notifications: mockNotifications,
+                unreadCount: 2
+            });
+        }
+
         return createResponse({
             notifications,
             unreadCount: unreadCount?.c || 0

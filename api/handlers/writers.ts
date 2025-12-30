@@ -11,9 +11,8 @@ export const handleWriters = async (request: Request, db: DatabaseService) => {
 
   // POST /api/writers/:id/set-default
   if (id && action === 'set-default' && method === 'POST') {
-      // Transaction-like logic
-      await db.execute('UPDATE writers SET is_default = 0'); // Reset all
-      await db.execute('UPDATE writers SET is_default = 1 WHERE id = ?', [id]); // Set new
+      await db.execute('UPDATE writers SET is_default = 0'); 
+      await db.execute('UPDATE writers SET is_default = 1 WHERE id = ?', [id]); 
       return createResponse({ success: true }, 'Default writer updated');
   }
 
@@ -48,6 +47,44 @@ export const handleWriters = async (request: Request, db: DatabaseService) => {
   if (method === 'GET') {
     // List all
     const writers = await db.query<Writer>('SELECT * FROM writers ORDER BY is_default DESC, created_at DESC');
+    
+    // MOCK DATA INJECTION
+    if (writers.length === 0) {
+        const mockWriters = [
+            {
+                id: 1,
+                name: 'Sara Danish',
+                bio: 'Senior tech journalist with a focus on AI. Loves deep analysis and structured arguments.',
+                personality: { traits: ['Analytical', 'Formal', 'Precise'] },
+                style: { sentence_length: 'medium', vocabulary: 'technical' },
+                avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sara',
+                is_default: 1,
+                created_at: new Date().toISOString()
+            },
+            {
+                id: 2,
+                name: 'Ali Novin',
+                bio: 'Enthusiastic blogger covering startup news. Uses emojis and energetic language.',
+                personality: { traits: ['Energetic', 'Casual', 'Optimistic'] },
+                style: { sentence_length: 'short', vocabulary: 'engaging' },
+                avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ali',
+                is_default: 0,
+                created_at: new Date().toISOString()
+            },
+            {
+                id: 3,
+                name: 'Dr. Ramin Farhadi',
+                bio: 'Computer science professor and deep tech analyst. Very detailed and authoritative.',
+                personality: { traits: ['Academic', 'Deep', 'Thoughtful'] },
+                style: { sentence_length: 'long', vocabulary: 'sophisticated' },
+                avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ramin',
+                is_default: 0,
+                created_at: new Date().toISOString()
+            }
+        ];
+        return createResponse(mockWriters);
+    }
+
     const parsedWriters = writers.map(w => {
         try {
             return {
@@ -64,7 +101,6 @@ export const handleWriters = async (request: Request, db: DatabaseService) => {
     const body = await request.json() as any;
     const { name, bio, personality, style, avatar_url } = body;
     
-    // Check if it's the first writer, make default
     const count = await db.queryOne<{c: number}>('SELECT count(*) as c FROM writers');
     const isDefault = (count?.c === 0) ? 1 : 0;
 

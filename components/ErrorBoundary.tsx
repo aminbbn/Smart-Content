@@ -1,4 +1,4 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react';
+import React, { ErrorInfo, ReactNode } from 'react';
 
 interface Props {
   children?: ReactNode;
@@ -9,10 +9,17 @@ interface State {
   error?: Error;
 }
 
-export default class ErrorBoundary extends Component<Props, State> {
+export default class ErrorBoundary extends React.Component<Props, State> {
+  public state: State = {
+    hasError: false
+  };
+
+  // Explicitly declare props to satisfy strict type checking if inheritance fails
+  public props: Props;
+
   constructor(props: Props) {
     super(props);
-    this.state = { hasError: false };
+    this.props = props;
   }
 
   public static getDerivedStateFromError(error: Error): State {
@@ -23,7 +30,7 @@ export default class ErrorBoundary extends Component<Props, State> {
     console.error('Uncaught error:', error, errorInfo);
   }
 
-  public render() {
+  public render(): ReactNode {
     if (this.state.hasError) {
       return (
         <div className="min-h-screen flex items-center justify-center bg-slate-50 text-slate-900 p-4" dir="rtl">

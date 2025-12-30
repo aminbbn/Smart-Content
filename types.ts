@@ -1,11 +1,10 @@
-import { Database } from 'better-sqlite3';
 
 // Navigation Types
 export type AppView = 'landing' | 'auth' | 'dashboard' | 'updates' | 'blog' | 'guide' | 'support' | 'api' | 'privacy' | 'terms';
 
 // Environment Bindings
 export interface Env {
-  DB: Database;
+  DB: any; // Using any to avoid importing 'better-sqlite3' in shared types which breaks browser
   GEMINI_API_KEY: string;
 }
 

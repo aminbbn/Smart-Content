@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { ContentCalendar as CalendarType } from '../types';
 
@@ -19,9 +20,9 @@ export default function ContentCalendar() {
         setLoading(false);
     };
 
-    // Use simulated dates for demo visualization since we lack real dates in DB often
+    // Use simulated dates for demo visualization
     const today = new Date();
-    const currentMonth = today.toLocaleDateString('fa-IR', { month: 'long', year: 'numeric' });
+    const currentMonth = today.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
     const daysInMonth = 30;
     const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
@@ -29,12 +30,12 @@ export default function ContentCalendar() {
         <div className="space-y-6 animate-page-enter">
             <div className="flex justify-between items-center">
                 <div>
-                    <h2 className="text-2xl font-bold text-slate-800 mb-2">تقویم محتوایی</h2>
-                    <p className="text-slate-500">برنامه‌ریزی زمانی انتشار مطالب</p>
+                    <h2 className="text-2xl font-bold text-slate-800 mb-2">Content Calendar</h2>
+                    <p className="text-slate-500">Schedule and plan your content publishing</p>
                 </div>
                 <div className="flex bg-white rounded-xl p-1 shadow-sm border border-slate-100">
-                    <button className="px-4 py-2 bg-blue-50 text-blue-700 rounded-lg text-sm font-bold">ماهانه</button>
-                    <button className="px-4 py-2 text-slate-500 hover:text-slate-700 rounded-lg text-sm font-bold">هفتگی</button>
+                    <button className="px-4 py-2 bg-blue-50 text-blue-700 rounded-lg text-sm font-bold">Monthly</button>
+                    <button className="px-4 py-2 text-slate-500 hover:text-slate-700 rounded-lg text-sm font-bold">Weekly</button>
                 </div>
             </div>
 
@@ -43,16 +44,16 @@ export default function ContentCalendar() {
                     <h3 className="text-xl font-bold text-slate-800">{currentMonth}</h3>
                     <div className="flex gap-2">
                         <button className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
-                            <svg className="w-5 h-5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                            <svg className="w-5 h-5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
                         </button>
                         <button className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
-                            <svg className="w-5 h-5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                            <svg className="w-5 h-5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                         </button>
                     </div>
                 </div>
 
                 <div className="grid grid-cols-7 gap-4 text-center mb-6">
-                    {['شنبه', 'یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنج‌شنبه', 'جمعه'].map(d => (
+                    {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => (
                         <div key={d} className="font-bold text-slate-400 text-sm">{d}</div>
                     ))}
                 </div>
@@ -79,14 +80,14 @@ export default function ContentCalendar() {
                                 <div className="space-y-2">
                                     {dayEvents.map(ev => (
                                         <div key={ev.id} className="bg-blue-100 text-blue-700 text-[10px] p-1.5 rounded font-bold truncate cursor-pointer hover:bg-blue-200 transition-colors">
-                                            {ev.title || 'بدون عنوان'}
+                                            {ev.title || 'Untitled'}
                                         </div>
                                     ))}
                                     {/* Simulated Event for Demo */}
-                                    {day === 12 && <div className="bg-purple-100 text-purple-700 text-[10px] p-1.5 rounded font-bold truncate">رونمایی محصول</div>}
+                                    {day === 12 && <div className="bg-purple-100 text-purple-700 text-[10px] p-1.5 rounded font-bold truncate">Product Launch</div>}
                                 </div>
 
-                                <button className="absolute bottom-2 left-2 w-6 h-6 rounded-full bg-slate-100 text-slate-400 items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity flex hover:bg-blue-500 hover:text-white">
+                                <button className="absolute bottom-2 right-2 w-6 h-6 rounded-full bg-slate-100 text-slate-400 items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity flex hover:bg-blue-500 hover:text-white">
                                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
                                 </button>
                             </div>

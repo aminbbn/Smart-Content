@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { AgentJob } from '../types';
 
@@ -44,7 +45,7 @@ export default function JobProgress({ jobId, onComplete, onCancel }: JobProgress
   if (!job) return (
     <div className="mt-4 p-6 text-center text-slate-500 bg-white rounded-2xl border border-slate-100 shadow-sm flex flex-col items-center justify-center gap-3 animate-pulse">
         <div className="w-10 h-10 border-4 border-slate-200 border-t-blue-500 rounded-full animate-spin"></div>
-        <span className="text-sm font-medium">در حال دریافت وضعیت...</span>
+        <span className="text-sm font-medium">Checking status...</span>
     </div>
   );
 
@@ -79,7 +80,7 @@ export default function JobProgress({ jobId, onComplete, onCancel }: JobProgress
             </div>
             <div>
                 <h4 className="font-bold text-slate-800 text-base">
-                    {isSuccess ? 'عملیات با موفقیت انجام شد' : isError ? 'عملیات ناموفق بود' : isCancelled ? 'لغو شده' : 'در حال پردازش...'}
+                    {isSuccess ? 'Operation Completed Successfully' : isError ? 'Operation Failed' : isCancelled ? 'Cancelled' : 'Processing...'}
                 </h4>
                 <p className="text-xs text-slate-400 mt-1 font-mono">ID: #{job.id}</p>
             </div>
@@ -96,7 +97,7 @@ export default function JobProgress({ jobId, onComplete, onCancel }: JobProgress
                     disabled={cancelling}
                     className="text-xs bg-slate-100 hover:bg-red-50 text-slate-500 hover:text-red-600 px-3 py-1.5 rounded-lg border border-slate-200 transition-colors font-bold"
                 >
-                    {cancelling ? '...' : 'لغو عملیات'}
+                    {cancelling ? '...' : 'Cancel'}
                 </button>
             )}
         </div>
@@ -119,10 +120,10 @@ export default function JobProgress({ jobId, onComplete, onCancel }: JobProgress
       
       <div className="flex justify-between items-center text-sm">
         <p className={`font-medium ${isError ? 'text-red-600' : 'text-slate-600'}`}>
-            {job.message || (isError ? 'خطایی رخ داد' : 'لطفا صبر کنید...')}
+            {job.message || (isError ? 'An error occurred' : 'Please wait...')}
         </p>
         <span className="text-xs text-slate-400">
-            {isRunning ? 'تخمین زمان باقی‌مانده: محاسبه...' : isSuccess ? 'تکمیل شده' : ''}
+            {isRunning ? 'Estimated time: calculating...' : isSuccess ? 'Done' : ''}
         </span>
       </div>
     </div>

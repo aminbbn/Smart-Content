@@ -41,6 +41,17 @@ export const handleAgents = async (request: Request, env: Env, db: DatabaseServi
 
     if (path === 'research/tasks' && method === 'GET') {
       const tasks = await db.query('SELECT * FROM research_tasks ORDER BY created_at DESC');
+      
+      // MOCK DATA INJECTION
+      if (tasks.length === 0) {
+          const mockTasks = [
+              { id: 1, query: "Impact of AI on Healthcare", status: "completed", created_at: new Date().toISOString(), results: JSON.stringify({ progress: 100, logs: ["Research started...", "Found 12 sources", "Drafting content", "Complete"] }) },
+              { id: 2, query: "Sustainable Energy Trends 2025", status: "researching", created_at: new Date(Date.now() - 300000).toISOString(), results: JSON.stringify({ progress: 45, logs: ["Research started...", "Analyzing market data..."] }) },
+              { id: 3, query: "History of the Internet", status: "failed", created_at: new Date(Date.now() - 800000).toISOString(), results: JSON.stringify({ progress: 20, logs: ["Research started...", "Error connecting to search tool"] }) }
+          ];
+          return createResponse(mockTasks);
+      }
+
       const parsed = tasks.map((t: any) => {
           try { 
               return { ...t, results: t.results ? JSON.parse(t.results) : { progress: 0, logs: [] } }; 
@@ -62,6 +73,15 @@ export const handleAgents = async (request: Request, env: Env, db: DatabaseServi
     
     if (path === 'feature-announcement/list' && method === 'GET') {
       const items = await db.query('SELECT * FROM feature_announcements ORDER BY created_at DESC');
+      
+      // MOCK DATA INJECTION
+      if (items.length === 0) {
+          return createResponse([
+              { id: 1, feature_name: "Dark Mode 2.0", description: "Improved contrast and OLED support.", status: "processed", created_at: new Date().toISOString() },
+              { id: 2, feature_name: "Mobile App Beta", description: "iOS release for beta testers.", status: "draft", created_at: new Date(Date.now() - 86400000).toISOString() }
+          ]);
+      }
+
       return createResponse(items);
     }
 

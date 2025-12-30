@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 
 export default function AgentSettings() {
@@ -48,9 +49,9 @@ export default function AgentSettings() {
     };
 
     const presets = [
-        { label: 'هر روز ۹ صبح', value: '0 9 * * *' },
-        { label: 'هر ۶ ساعت', value: '0 */6 * * *' },
-        { label: 'شنبه‌ها صبح', value: '0 9 * * 6' },
+        { label: 'Every day 9 AM', value: '0 9 * * *' },
+        { label: 'Every 6 hours', value: '0 */6 * * *' },
+        { label: 'Saturdays', value: '0 9 * * 6' },
     ];
 
     if (loading) return (
@@ -64,12 +65,12 @@ export default function AgentSettings() {
             {/* Page Header */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-slate-200/60 pb-6">
                 <div>
-                    <h2 className="text-3xl font-extrabold text-slate-800 tracking-tight">پیکربندی سیستم</h2>
-                    <p className="text-slate-500 mt-2 text-lg">مدیریت هسته مرکزی هوش مصنوعی و زمان‌بندی‌ها</p>
+                    <h2 className="text-3xl font-extrabold text-slate-800 tracking-tight">System Configuration</h2>
+                    <p className="text-slate-500 mt-2 text-lg">Manage AI core settings and schedules</p>
                 </div>
                 <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-full border border-slate-100 shadow-sm">
                    <div className={`w-2 h-2 rounded-full ${formData.is_active ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></div>
-                   <span className="text-sm font-bold text-slate-600">{formData.is_active ? 'سیستم فعال است' : 'سیستم غیرفعال'}</span>
+                   <span className="text-sm font-bold text-slate-600">{formData.is_active ? 'System Active' : 'System Inactive'}</span>
                 </div>
             </div>
             
@@ -82,11 +83,11 @@ export default function AgentSettings() {
                                 <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
                             </div>
                             <div>
-                                <h3 className="font-extrabold text-slate-800 text-2xl mb-2">وضعیت عملیاتی</h3>
+                                <h3 className="font-extrabold text-slate-800 text-2xl mb-2">Operational Status</h3>
                                 <p className="text-slate-500 text-sm max-w-lg leading-relaxed">
                                     {formData.is_active 
-                                        ? 'سیستم در حال اجراست. ایجنت‌ها طبق برنامه زمان‌بندی شده وظایف خود را انجام می‌دهند.' 
-                                        : 'سیستم متوقف شده است. هیچ وظیفه خودکاری اجرا نخواهد شد.'}
+                                        ? 'System is running. Agents are executing tasks according to schedule.' 
+                                        : 'System is paused. No automated tasks will run.'}
                                 </p>
                             </div>
                         </div>
@@ -111,7 +112,7 @@ export default function AgentSettings() {
                             <span className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
                                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>
                             </span>
-                            <h3 className="font-bold text-slate-800 text-xl">موتور هوش مصنوعی</h3>
+                            <h3 className="font-bold text-slate-800 text-xl">AI Engine</h3>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -134,11 +135,11 @@ export default function AgentSettings() {
                                     )}
                                 </div>
                                 <p className="text-xs text-slate-500 leading-relaxed mb-4">
-                                    سریع‌ترین و مقرون‌به‌صرفه‌ترین مدل گوگل. مناسب برای کارهای با حجم بالا و پاسخ‌دهی سریع.
+                                    Google's fastest and most cost-efficient model. Best for high-volume tasks and quick responses.
                                 </p>
                                 <div className="mt-auto flex gap-2">
-                                    <span className="text-[10px] bg-white border border-slate-200 px-2 py-1 rounded-md text-slate-600 font-bold">کم هزینه</span>
-                                    <span className="text-[10px] bg-white border border-slate-200 px-2 py-1 rounded-md text-slate-600 font-bold">پرسرعت</span>
+                                    <span className="text-[10px] bg-white border border-slate-200 px-2 py-1 rounded-md text-slate-600 font-bold">Low Cost</span>
+                                    <span className="text-[10px] bg-white border border-slate-200 px-2 py-1 rounded-md text-slate-600 font-bold">Fast</span>
                                 </div>
                             </div>
 
@@ -161,11 +162,11 @@ export default function AgentSettings() {
                                     )}
                                 </div>
                                 <p className="text-xs text-slate-500 leading-relaxed mb-4">
-                                    هوشمندترین مدل برای استدلال پیچیده، خلاقیت بالا و تولید محتوای طولانی با کیفیت انسانی.
+                                    Smartest model for complex reasoning, high creativity, and long-form human-quality content.
                                 </p>
                                 <div className="mt-auto flex gap-2">
-                                    <span className="text-[10px] bg-white border border-slate-200 px-2 py-1 rounded-md text-slate-600 font-bold">هوش بالا</span>
-                                    <span className="text-[10px] bg-white border border-slate-200 px-2 py-1 rounded-md text-slate-600 font-bold">خلاق</span>
+                                    <span className="text-[10px] bg-white border border-slate-200 px-2 py-1 rounded-md text-slate-600 font-bold">High IQ</span>
+                                    <span className="text-[10px] bg-white border border-slate-200 px-2 py-1 rounded-md text-slate-600 font-bold">Creative</span>
                                 </div>
                             </div>
                         </div>
@@ -174,7 +175,7 @@ export default function AgentSettings() {
                     {/* Temperature Column */}
                     <div className="bg-white rounded-[2rem] shadow-card border border-slate-100 p-8 flex flex-col justify-center">
                         <div className="flex justify-between items-center mb-6">
-                            <label className="font-bold text-slate-800 text-lg">درجه خلاقیت</label>
+                            <label className="font-bold text-slate-800 text-lg">Creativity Level</label>
                             <span className="bg-slate-100 text-slate-800 px-3 py-1 rounded-lg font-mono font-bold text-lg border border-slate-200">
                                 {formData.model_config.temperature}
                             </span>
@@ -195,16 +196,16 @@ export default function AgentSettings() {
                                 />
                                 <div className="flex justify-between mt-4 px-1">
                                     <div className={`text-center transition-opacity duration-300 ${formData.model_config.temperature < 0.4 ? 'opacity-100' : 'opacity-40'}`}>
-                                        <span className="block text-xs font-bold text-slate-800">دقیق</span>
-                                        <span className="block text-[10px] text-slate-400">منطقی</span>
+                                        <span className="block text-xs font-bold text-slate-800">Precise</span>
+                                        <span className="block text-[10px] text-slate-400">Logical</span>
                                     </div>
                                     <div className={`text-center transition-opacity duration-300 ${formData.model_config.temperature >= 0.4 && formData.model_config.temperature <= 0.7 ? 'opacity-100' : 'opacity-40'}`}>
-                                        <span className="block text-xs font-bold text-slate-800">متعادل</span>
-                                        <span className="block text-[10px] text-slate-400">استاندارد</span>
+                                        <span className="block text-xs font-bold text-slate-800">Balanced</span>
+                                        <span className="block text-[10px] text-slate-400">Standard</span>
                                     </div>
                                     <div className={`text-center transition-opacity duration-300 ${formData.model_config.temperature > 0.7 ? 'opacity-100' : 'opacity-40'}`}>
-                                        <span className="block text-xs font-bold text-slate-800">خلاق</span>
-                                        <span className="block text-[10px] text-slate-400">نوآورانه</span>
+                                        <span className="block text-xs font-bold text-slate-800">Creative</span>
+                                        <span className="block text-[10px] text-slate-400">Innovative</span>
                                     </div>
                                 </div>
                              </div>
@@ -220,8 +221,8 @@ export default function AgentSettings() {
                                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                             </span>
                             <div>
-                                <h3 className="font-bold text-slate-800 text-xl">زمان‌بندی خودکار</h3>
-                                <p className="text-xs text-slate-500 mt-1">تنظیم چرخه فعالیت ایجنت تحقیق</p>
+                                <h3 className="font-bold text-slate-800 text-xl">Auto Scheduler</h3>
+                                <p className="text-xs text-slate-500 mt-1">Set cycle for Research Agent</p>
                             </div>
                         </div>
                         <div className="flex gap-2">
@@ -242,7 +243,7 @@ export default function AgentSettings() {
                     </div>
 
                     <div className="p-8 bg-white">
-                        <label className="block text-sm font-bold text-slate-700 mb-4">عبارت زمان‌بندی (Cron Expression)</label>
+                        <label className="block text-sm font-bold text-slate-700 mb-4">Cron Expression</label>
                         
                         <div className="relative group max-w-2xl">
                             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10">
@@ -265,7 +266,7 @@ export default function AgentSettings() {
                         
                         <div className="mt-4 flex items-center gap-2 text-xs text-slate-500">
                             <svg className="w-4 h-4 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                            <p>فرمت استاندارد: <span className="font-mono bg-slate-100 px-1 rounded">دقیقه ساعت روز ماه هفته</span>. مثال: <span className="font-mono" dir="ltr">0 9 * * *</span> یعنی هر روز ساعت ۹ صبح.</p>
+                            <p>Standard Format: <span className="font-mono bg-slate-100 px-1 rounded">Min Hour Day Month Week</span>. Example: <span className="font-mono" dir="ltr">0 9 * * *</span> means every day at 9 AM.</p>
                         </div>
                     </div>
                 </div>
@@ -279,8 +280,8 @@ export default function AgentSettings() {
                             <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" /></svg>
                         </div>
                         <div className="hidden sm:block">
-                            <p className="font-bold text-sm">تغییرات پیکربندی</p>
-                            <p className="text-xs text-slate-400">برای اعمال روی ایجنت‌ها ذخیره کنید</p>
+                            <p className="font-bold text-sm">Config Updates</p>
+                            <p className="text-xs text-slate-400">Save to apply to all agents</p>
                         </div>
                     </div>
                     <button 
@@ -291,11 +292,11 @@ export default function AgentSettings() {
                         {saving ? (
                             <>
                                 <svg className="animate-spin h-5 w-5 text-slate-900" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                                <span>در حال ذخیره...</span>
+                                <span>Saving...</span>
                             </>
                         ) : (
                             <>
-                                <span>ذخیره و اعمال</span>
+                                <span>Save & Apply</span>
                                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                             </>
                         )}

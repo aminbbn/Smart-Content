@@ -25,14 +25,14 @@ export default function AuthPage({ onLogin, onBack }: Props) {
   };
 
   return (
-    <div className="min-h-screen flex font-sans bg-white" dir="rtl">
-      {/* Visual Side (Right Side in RTL) */}
+    <div className="min-h-screen flex font-sans bg-white" dir="ltr">
+      {/* Visual Side (Left Side in LTR) */}
       <div className="hidden lg:flex lg:w-1/2 bg-slate-900 relative overflow-hidden flex-col justify-between p-16 text-white">
         {/* Abstract Background */}
         <div className="absolute inset-0 bg-slate-900">
             <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5"></div>
-            <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-blue-600/20 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2 animate-pulse-slow"></div>
-            <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-indigo-600/20 rounded-full blur-[100px] translate-y-1/3 -translate-x-1/3 animate-float"></div>
+            <div className="absolute top-0 left-0 w-[800px] h-[800px] bg-blue-600/20 rounded-full blur-[120px] -translate-y-1/2 -translate-x-1/2 animate-pulse-slow"></div>
+            <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-indigo-600/20 rounded-full blur-[100px] translate-y-1/3 translate-x-1/3 animate-float"></div>
         </div>
 
         {/* Brand & Content */}
@@ -44,31 +44,31 @@ export default function AuthPage({ onLogin, onBack }: Props) {
                 <div className="w-12 h-12 bg-gradient-to-tr from-blue-500 to-indigo-500 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/30 group-hover:scale-105 transition-transform duration-300">
                     <span className="font-bold text-xl text-white">AI</span>
                 </div>
-                <span className="text-2xl font-extrabold tracking-tight text-white group-hover:text-blue-200 transition-colors">اسمارت کانتنت</span>
+                <span className="text-2xl font-extrabold tracking-tight text-white group-hover:text-blue-200 transition-colors">Smart Content</span>
             </div>
 
             <div className="space-y-8 max-w-lg">
                 <h1 className="text-5xl font-extrabold leading-tight tracking-tight">
-                    <span className="block text-blue-400 mb-2">هوش مصنوعی</span>
-                    همکار خلاق شما
+                    <span className="block text-blue-400 mb-2">Artificial Intelligence</span>
+                    Your Creative Partner
                 </h1>
                 <p className="text-lg text-slate-300 leading-relaxed font-light">
-                    با قدرت مدل‌های زبانی پیشرفته، محتوای متنی، اخبار و تحلیل‌های دقیق را در کسری از ثانیه تولید کنید. ما پیچیدگی را حذف کردیم تا شما روی خلاقیت تمرکز کنید.
+                    Generate text content, news, and accurate analysis in a fraction of a second with advanced language models. We removed the complexity so you can focus on creativity.
                 </p>
                 
                 <div className="flex gap-4 pt-4">
-                    <div className="flex -space-x-4 space-x-reverse">
+                    <div className="flex -space-x-4">
                         {[1,2,3,4].map(i => (
                             <div key={i} className="w-12 h-12 rounded-full border-2 border-slate-900 bg-slate-800 flex items-center justify-center text-xs font-bold relative z-10 overflow-hidden">
                                 <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${i*123}`} alt="User" />
                             </div>
                         ))}
                     </div>
-                    <div className="flex flex-col justify-center">
+                    <div className="flex flex-col justify-center pl-4">
                         <div className="flex items-center gap-1">
                             {[1,2,3,4,5].map(i => <svg key={i} className="w-4 h-4 text-amber-400 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00.951-.69l1.07-3.292z"/></svg>)}
                         </div>
-                        <span className="text-sm text-slate-400">مورد اعتماد +۵۰۰ تیم برتر</span>
+                        <span className="text-sm text-slate-400">Trusted by 500+ top teams</span>
                     </div>
                 </div>
             </div>
@@ -76,10 +76,10 @@ export default function AuthPage({ onLogin, onBack }: Props) {
 
         {/* Footer Links */}
         <div className="relative z-10 flex justify-between text-sm text-slate-500 border-t border-white/10 pt-8 mt-auto">
-            <span>© ۱۴۰۳ اسمارت کانتنت</span>
+            <span>© 2024 Smart Content</span>
             <div className="flex gap-6">
-                <button className="hover:text-white transition-colors">حریم خصوصی</button>
-                <button className="hover:text-white transition-colors">قوانین و مقررات</button>
+                <button className="hover:text-white transition-colors">Privacy</button>
+                <button className="hover:text-white transition-colors">Terms</button>
             </div>
         </div>
       </div>
@@ -90,19 +90,19 @@ export default function AuthPage({ onLogin, onBack }: Props) {
             onClick={onBack}
             className="absolute top-8 left-8 text-slate-400 hover:text-slate-800 flex items-center gap-2 transition-colors text-sm font-bold bg-slate-50 px-4 py-2 rounded-xl hover:bg-slate-100"
         >
-            بازگشت
-            <svg className="w-4 h-4 rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+            Back
         </button>
 
         <div className="w-full max-w-[400px] space-y-10 animate-slide-up">
             <div className="text-center space-y-3">
                 <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">
-                    {mode === 'login' ? 'ورود به حساب کاربری' : 'ساخت حساب جدید'}
+                    {mode === 'login' ? 'Sign in to your account' : 'Create new account'}
                 </h2>
                 <p className="text-slate-500 font-medium">
                     {mode === 'login' 
-                        ? 'به پنل مدیریت محتوای خود خوش آمدید' 
-                        : 'همین حالا شروع کنید، کاملا رایگان'
+                        ? 'Welcome back to your content dashboard' 
+                        : 'Get started now, completely free'
                     }
                 </p>
             </div>
@@ -110,31 +110,31 @@ export default function AuthPage({ onLogin, onBack }: Props) {
             {/* Mode Switcher */}
             <div className="bg-slate-100 p-1.5 rounded-2xl flex relative shadow-inner">
                 <div 
-                    className={`absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] bg-white rounded-xl shadow-sm transition-all duration-500 cubic-bezier(0.4, 0, 0.2, 1) ${mode === 'login' ? 'right-1.5' : 'right-[calc(50%+1.5px)]'}`}
+                    className={`absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] bg-white rounded-xl shadow-sm transition-all duration-500 cubic-bezier(0.4, 0, 0.2, 1) ${mode === 'login' ? 'left-1.5' : 'left-[calc(50%+1.5px)]'}`}
                 ></div>
                 <button 
                     onClick={() => setMode('login')}
                     className={`flex-1 py-3 text-sm font-bold rounded-xl relative z-10 transition-colors duration-300 ${mode === 'login' ? 'text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
                 >
-                    ورود
+                    Login
                 </button>
                 <button 
                     onClick={() => setMode('register')}
                     className={`flex-1 py-3 text-sm font-bold rounded-xl relative z-10 transition-colors duration-300 ${mode === 'register' ? 'text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
                 >
-                    ثبت نام
+                    Register
                 </button>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
                 {mode === 'register' && (
                     <div className="animate-fade-in">
-                        <label className="block text-xs font-bold text-slate-700 mb-2 mr-1">نام و نام خانوادگی</label>
+                        <label className="block text-xs font-bold text-slate-700 mb-2 ml-1">Full Name</label>
                         <div className="relative group">
                             <input 
                                 type="text" 
                                 className="w-full pl-4 pr-12 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10 outline-none transition-all font-medium text-slate-800 placeholder-slate-400 group-hover:bg-slate-100"
-                                placeholder="مثال: علی محمدی"
+                                placeholder="e.g. John Doe"
                                 value={formData.name}
                                 onChange={e => setFormData({...formData, name: e.target.value})}
                             />
@@ -146,7 +146,7 @@ export default function AuthPage({ onLogin, onBack }: Props) {
                 )}
 
                 <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-2 mr-1">آدرس ایمیل</label>
+                    <label className="block text-xs font-bold text-slate-700 mb-2 ml-1">Email Address</label>
                     <div className="relative group">
                         <input 
                             type="email" 
@@ -162,10 +162,10 @@ export default function AuthPage({ onLogin, onBack }: Props) {
                 </div>
 
                 <div>
-                    <div className="flex justify-between items-center mr-1 mb-2">
-                        <label className="block text-xs font-bold text-slate-700">رمز عبور</label>
+                    <div className="flex justify-between items-center ml-1 mb-2">
+                        <label className="block text-xs font-bold text-slate-700">Password</label>
                         {mode === 'login' && (
-                            <button type="button" className="text-xs font-bold text-blue-600 hover:text-blue-800 transition-colors">فراموشی رمز؟</button>
+                            <button type="button" className="text-xs font-bold text-blue-600 hover:text-blue-800 transition-colors">Forgot password?</button>
                         )}
                     </div>
                     <div className="relative group">
@@ -190,12 +190,12 @@ export default function AuthPage({ onLogin, onBack }: Props) {
                     {loading ? (
                         <>
                             <div className="w-5 h-5 border-3 border-white/30 border-t-white rounded-full animate-spin"></div>
-                            <span>لطفا صبر کنید...</span>
+                            <span>Please wait...</span>
                         </>
                     ) : (
                         <>
-                            <span>{mode === 'login' ? 'ورود به پنل' : 'ساخت حساب رایگان'}</span>
-                            <svg className="w-5 h-5 rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
+                            <span>{mode === 'login' ? 'Sign In' : 'Create Free Account'}</span>
+                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
                         </>
                     )}
                 </button>

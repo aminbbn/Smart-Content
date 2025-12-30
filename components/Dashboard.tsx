@@ -1,4 +1,4 @@
-import React, { useEffect, useState, Suspense } from 'react';
+import React, { useEffect, useState, Suspense, useRef } from 'react';
 import NotificationCenter from './NotificationCenter';
 import { BlogTimelineChart, WriterPerformanceChart, StatusDistributionChart } from './Charts';
 
@@ -29,22 +29,74 @@ const AnalyticsDashboard = React.lazy(() => import('./AnalyticsDashboard'));
 const MonitoringDashboard = React.lazy(() => import('./MonitoringDashboard'));
 const NotificationsView = React.lazy(() => import('./NotificationsView'));
 
+// --- Utility: Scroll Trigger ---
+interface ScrollTriggerProps {
+    className?: string;
+    delay?: number;
+}
+
+const ScrollTrigger = ({ children, className = "", delay = 0 }: React.PropsWithChildren<ScrollTriggerProps>) => {
+    const [isVisible, setIsVisible] = useState(false);
+    const ref = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const observer = new IntersectionObserver(([entry]) => {
+            if (entry.isIntersecting) {
+                setIsVisible(true);
+                observer.disconnect();
+            }
+        }, { threshold: 0.1 });
+        
+        if (ref.current) observer.observe(ref.current);
+        return () => observer.disconnect();
+    }, []);
+
+    return (
+        <div 
+            ref={ref} 
+            className={`transition-all duration-700 ease-out transform ${
+                isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+            } ${className}`}
+            style={{ transitionDelay: `${delay}ms` }}
+        >
+            {children}
+        </div>
+    );
+};
+
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState('overview');
-  const [stats, setStats] = useState({ articles: 0, blogs: 0, writers: 0, active_jobs: 0 });
-  const [chartData, setChartData] = useState<any>(null);
-
-  useEffect(() => {
-    fetch('/api/stats').then(res => res.json()).then(data => {
-        if(data.success) setStats(data.data);
-    }).catch(console.error);
-    
-    fetch('/api/analytics').then(res => res.json()).then(data => {
-        if(data.success) setChartData(data.data);
-    }).catch(console.error);
-
-    fetch('/api/seed').catch(console.error);
-  }, []);
+  
+  // Initialize with MOCK DATA immediately
+  const [stats, setStats] = useState({ 
+      articles: 142, 
+      blogs: 38, 
+      writers: 4, 
+      active_jobs: 2 
+  });
+  
+  const [chartData, setChartData] = useState<any>({
+      recent_growth: Array.from({length: 15}, (_, i) => ({
+          date: new Date(Date.now() - (14-i) * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', {month:'short', day:'numeric'}),
+          views: Math.floor(Math.random() * 800) + 200
+      })),
+      content_status: [
+          { name: 'published', value: 25 },
+          { name: 'draft', value: 10 },
+          { name: 'scheduled', value: 3 }
+      ],
+      writer_performance: [
+          { name: 'Sara', total_views: 12500, post_count: 15, avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sara' },
+          { name: 'Ali', total_views: 8900, post_count: 12, avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ali' },
+          { name: 'Ramin', total_views: 6400, post_count: 8, avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ramin' },
+          { name: 'AI', total_views: 3200, post_count: 3, avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=AI' }
+      ],
+      recent_drafts: [
+          { title: "Generative AI Trends 2025", writer: "Sara Danish", created_at: new Date().toISOString() },
+          { title: "Marketing Automation Guide", writer: "Ali Novin", created_at: new Date(Date.now() - 86400000).toISOString() },
+          { title: "Q3 Financial Analysis", writer: "Dr. Ramin", created_at: new Date(Date.now() - 172800000).toISOString() }
+      ]
+  });
 
   const renderContent = () => {
     return (
@@ -52,7 +104,7 @@ export default function Dashboard() {
           <div className="flex h-96 w-full items-center justify-center">
             <div className="flex flex-col items-center gap-4">
               <div className="w-12 h-12 border-4 border-blue-500/30 border-t-blue-600 rounded-full animate-spin"></div>
-              <div className="text-slate-400 font-medium animate-pulse">در حال بارگذاری سیستم...</div>
+              <div className="text-slate-400 font-medium animate-pulse">Loading system...</div>
             </div>
           </div>
         }>
@@ -82,20 +134,20 @@ export default function Dashboard() {
         onClick={() => setActiveTab(id)}
         className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all duration-300 group ${
             activeTab === id 
-            ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20 translate-x-[-4px]' 
+            ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20 translate-x-[4px]' 
             : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
         }`}
     >
         <span className={`transition-transform duration-300 ${activeTab === id ? 'scale-110' : 'group-hover:scale-110'}`}>{icon}</span>
         <span className={`text-sm font-medium ${activeTab === id ? 'font-bold' : ''}`}>{label}</span>
-        {activeTab === id && <span className="mr-auto w-1.5 h-1.5 rounded-full bg-white/50"></span>}
+        {activeTab === id && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-white/50"></span>}
     </button>
   );
 
   return (
-    <div className="min-h-screen bg-[#F3F6F8] text-slate-800 flex font-sans" dir="rtl">
+    <div className="min-h-screen bg-[#F3F6F8] text-slate-800 flex font-sans" dir="ltr">
       {/* Sidebar */}
-      <aside className="w-72 bg-white fixed h-full z-30 hidden md:flex flex-col shadow-2xl shadow-slate-200/50 rounded-l-[0px]">
+      <aside className="w-72 bg-white fixed h-full z-30 hidden md:flex flex-col shadow-2xl shadow-slate-200/50 rounded-r-[0px]">
         {/* Brand Section */}
         <div className="p-8 pb-6 flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -104,30 +156,30 @@ export default function Dashboard() {
                     <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
                 </div>
                 <div className="flex flex-col">
-                  <h1 className="text-lg font-extrabold text-slate-800 tracking-tight leading-none mb-1">اسمارت کانتنت</h1>
-                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider bg-slate-100 px-2 py-0.5 rounded-full self-start">نسخه ۲.۵</span>
+                  <h1 className="text-lg font-extrabold text-slate-800 tracking-tight leading-none mb-1">Smart Content</h1>
+                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider bg-slate-100 px-2 py-0.5 rounded-full self-start">v2.5</span>
                 </div>
             </div>
         </div>
 
         {/* Navigation */}
         <nav className="px-4 space-y-1 flex-grow overflow-y-auto custom-scrollbar pb-6">
-            <div className="px-4 py-3 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mt-2">داشبورد اصلی</div>
-            <NavItem id="overview" label="نمای کلی" icon={<HomeIcon />} />
-            <NavItem id="analytics" label="آمار و تحلیل" icon={<ChartIcon />} />
-            <NavItem id="calendar" label="تقویم محتوایی" icon={<CalendarIcon />} />
+            <div className="px-4 py-3 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mt-2">Main Dashboard</div>
+            <NavItem id="overview" label="Overview" icon={<HomeIcon />} />
+            <NavItem id="analytics" label="Analytics" icon={<ChartIcon />} />
+            <NavItem id="calendar" label="Content Calendar" icon={<CalendarIcon />} />
             
-            <div className="px-4 py-3 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mt-6">دستیاران هوشمند</div>
-            <NavItem id="agent-daily" label="اخبار روزانه" icon={<NewsIcon />} />
-            <NavItem id="agent-research" label="تحقیق و نگارش" icon={<FlaskIcon />} />
-            <NavItem id="agent-feature" label="معرفی محصول" icon={<SpeakerIcon />} />
+            <div className="px-4 py-3 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mt-6">Smart Agents</div>
+            <NavItem id="agent-daily" label="Daily News" icon={<NewsIcon />} />
+            <NavItem id="agent-research" label="Research & Write" icon={<FlaskIcon />} />
+            <NavItem id="agent-feature" label="Product Launch" icon={<SpeakerIcon />} />
 
-            <div className="px-4 py-3 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mt-6">مدیریت سیستم</div>
-            <NavItem id="blogs" label="کتابخانه محتوا" icon={<DocIcon />} />
-            <NavItem id="writers" label="نویسندگان" icon={<UsersIcon />} />
-            <NavItem id="monitoring" label="مانیتورینگ" icon={<ActivityIcon />} />
-            <NavItem id="company" label="تنظیمات شرکت" icon={<BuildingIcon />} />
-            <NavItem id="agents" label="پیکربندی" icon={<ChipIcon />} />
+            <div className="px-4 py-3 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mt-6">System Management</div>
+            <NavItem id="blogs" label="Content Library" icon={<DocIcon />} />
+            <NavItem id="writers" label="Writers" icon={<UsersIcon />} />
+            <NavItem id="monitoring" label="Monitoring" icon={<ActivityIcon />} />
+            <NavItem id="company" label="Company Settings" icon={<BuildingIcon />} />
+            <NavItem id="agents" label="Configuration" icon={<ChipIcon />} />
         </nav>
 
         {/* User Profile Snippet */}
@@ -138,7 +190,7 @@ export default function Dashboard() {
                 </div>
             </div>
             <div className="flex-grow">
-                <p className="text-sm font-bold text-slate-800">مدیر سیستم</p>
+                <p className="text-sm font-bold text-slate-800">System Admin</p>
                 <p className="text-xs text-slate-500">admin@company.com</p>
             </div>
             <button className="text-slate-400 hover:text-red-500 transition-colors">
@@ -151,10 +203,10 @@ export default function Dashboard() {
       <div className="md:hidden fixed top-0 w-full glass z-40 px-4 h-16 flex items-center justify-between shadow-sm">
          <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center text-white font-bold text-sm shadow-lg">AI</div>
-            <span className="font-bold text-slate-800">اسمارت کانتنت</span>
+            <span className="font-bold text-slate-800">Smart Content</span>
          </div>
          <div className="flex items-center gap-3">
-             <NotificationCenter align="left" onViewArchive={() => setActiveTab('notifications')} />
+             <NotificationCenter align="right" onViewArchive={() => setActiveTab('notifications')} />
              <button onClick={() => {}} className="p-2 rounded-lg bg-slate-100 text-slate-600">
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16m-7 6h7" /></svg>
              </button>
@@ -162,24 +214,24 @@ export default function Dashboard() {
       </div>
 
       {/* Main Content */}
-      <main className="flex-grow md:mr-72 p-4 md:p-10 pt-20 md:pt-10 overflow-y-auto animate-page-enter min-h-screen">
+      <main className="flex-grow md:ml-72 p-4 md:p-10 pt-20 md:pt-10 overflow-y-auto animate-page-enter min-h-screen">
         {/* Top Header Bar */}
         <div className="flex justify-between items-center mb-8">
             <div>
                  <h2 className="text-xl font-extrabold text-slate-800 tracking-tight">
-                    {activeTab === 'overview' ? 'داشبورد مدیریت' : 
-                     activeTab === 'agent-daily' ? 'اخبار روزانه' : 
-                     activeTab === 'agent-research' ? 'دستیار تحقیق' : 
-                     activeTab === 'blogs' ? 'کتابخانه محتوا' : 
-                     activeTab === 'notifications' ? 'مرکز اعلان‌ها' : 
-                     'پنل مدیریت'}
+                    {activeTab === 'overview' ? 'Dashboard Overview' : 
+                     activeTab === 'agent-daily' ? 'Daily News' : 
+                     activeTab === 'agent-research' ? 'Research Assistant' : 
+                     activeTab === 'blogs' ? 'Content Library' : 
+                     activeTab === 'notifications' ? 'Notifications Center' : 
+                     'Management Panel'}
                  </h2>
                  <p className="text-xs text-slate-400 font-medium mt-1">
-                    {new Date().toLocaleDateString('fa-IR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                    {new Date().toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
                  </p>
             </div>
             <div className="flex items-center gap-4">
-                <NotificationCenter align="left" onViewArchive={() => setActiveTab('notifications')} />
+                <NotificationCenter align="right" onViewArchive={() => setActiveTab('notifications')} />
             </div>
         </div>
 
@@ -199,9 +251,9 @@ const StatCard = ({ title, value, icon, colorClass, trend, delay }: any) => (
             {trend && (
                 <div className={`flex items-center px-2.5 py-1 rounded-full text-xs font-bold ${
                     trend.includes('+') ? 'bg-green-50 text-green-600' : 
-                    trend === 'ثابت' ? 'bg-slate-50 text-slate-500' : 'bg-red-50 text-red-600'
+                    trend === 'Fixed' ? 'bg-slate-50 text-slate-500' : 'bg-red-50 text-red-600'
                 }`}>
-                    {trend.includes('+') && <svg className="w-3 h-3 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>}
+                    {trend.includes('+') && <svg className="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>}
                     {trend}
                 </div>
             )}
@@ -214,6 +266,40 @@ const StatCard = ({ title, value, icon, colorClass, trend, delay }: any) => (
     </div>
 );
 
+const ActionCard = ({ icon, title, desc, onClick, color, delay }: any) => {
+    const bgMap = {
+        blue: 'bg-blue-50 group-hover:bg-blue-600 text-blue-600 group-hover:text-white',
+        purple: 'bg-purple-50 group-hover:bg-purple-600 text-purple-600 group-hover:text-white',
+        emerald: 'bg-emerald-50 group-hover:bg-emerald-600 text-emerald-600 group-hover:text-white',
+        amber: 'bg-amber-50 group-hover:bg-amber-600 text-amber-600 group-hover:text-white',
+    };
+
+    return (
+        <ScrollTrigger delay={delay}>
+            <button 
+                onClick={onClick}
+                className="w-full text-left bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-blue-500/10 hover:-translate-y-1 transition-all duration-300 group h-full flex flex-col justify-between overflow-hidden relative"
+            >
+                <div className={`absolute -right-4 -top-4 w-20 h-20 rounded-full opacity-0 group-hover:opacity-10 transition-opacity duration-500 ${bgMap[color as keyof typeof bgMap].split(' ')[0]}`}></div>
+                
+                <div className="flex justify-between items-start mb-4 relative z-10">
+                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-300 ${bgMap[color as keyof typeof bgMap]}`}>
+                        {icon}
+                    </div>
+                    <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-300 group-hover:bg-white/20 group-hover:text-slate-400 transition-colors">
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+                    </div>
+                </div>
+                
+                <div className="relative z-10">
+                    <h4 className="text-lg font-bold text-slate-800 mb-1 group-hover:text-blue-700 transition-colors">{title}</h4>
+                    <p className="text-xs text-slate-500 font-medium leading-relaxed">{desc}</p>
+                </div>
+            </button>
+        </ScrollTrigger>
+    );
+}
+
 const Overview = ({ stats, chartData, setActiveTab }: any) => {
     // Force data structure for charts to avoid "undefined" errors during loading
     const displayData = chartData || {
@@ -224,215 +310,260 @@ const Overview = ({ stats, chartData, setActiveTab }: any) => {
     };
 
     return (
-        <div className="space-y-8 animate-page-enter w-full">
-            {/* Welcome Hero */}
-            <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-3xl p-8 md:p-10 text-white shadow-2xl shadow-blue-600/20 relative overflow-hidden animate-slide-in">
-                <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-                    <div>
-                        <h2 className="text-3xl font-extrabold mb-2">سلام، مدیر عزیز 👋</h2>
-                        <p className="text-blue-100 text-lg opacity-90 max-w-xl leading-relaxed">
-                            سیستم هوشمند شما در حال حاضر <span className="font-bold text-white border-b border-white/30">{stats.active_jobs} وظیفه فعال</span> دارد و آماده دستورات جدید است.
-                        </p>
-                        <div className="mt-8 flex gap-3">
-                            <button 
-                                onClick={() => setActiveTab('agent-research')}
-                                className="bg-white text-blue-700 px-6 py-3 rounded-xl font-bold hover:bg-blue-50 transition-all shadow-lg active:scale-95 flex items-center gap-2"
-                            >
-                                <FlaskIcon />
-                                <span>تحقیق جدید</span>
-                            </button>
-                            <button 
-                                onClick={() => setActiveTab('agent-daily')}
-                                className="bg-blue-800/50 text-white border border-white/20 px-6 py-3 rounded-xl font-bold hover:bg-blue-800 transition-all active:scale-95"
-                            >
-                                بررسی اخبار
-                            </button>
+        <div className="space-y-8 w-full">
+            {/* Welcome Hero - Uses ScrollTrigger wrapped internally or handles entry via standard CSS */}
+            <div className="animate-slide-in">
+                <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-3xl p-8 md:p-10 text-white shadow-2xl shadow-blue-600/20 relative overflow-hidden">
+                    <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                        <div>
+                            <h2 className="text-3xl font-extrabold mb-2">Hello, Admin 👋</h2>
+                            <p className="text-blue-100 text-lg opacity-90 max-w-xl leading-relaxed">
+                                Your intelligent system currently has <span className="font-bold text-white border-b border-white/30">{stats.active_jobs} active tasks</span> and is ready for new commands.
+                            </p>
+                            <div className="mt-8 flex gap-3">
+                                <button 
+                                    onClick={() => setActiveTab('agent-research')}
+                                    className="bg-white text-blue-700 px-6 py-3 rounded-xl font-bold hover:bg-blue-50 transition-all shadow-lg active:scale-95 flex items-center gap-2"
+                                >
+                                    <FlaskIcon />
+                                    <span>New Research</span>
+                                </button>
+                                <button 
+                                    onClick={() => setActiveTab('agent-daily')}
+                                    className="bg-blue-800/50 text-white border border-white/20 px-6 py-3 rounded-xl font-bold hover:bg-blue-800 transition-all active:scale-95"
+                                >
+                                    Check News
+                                </button>
+                            </div>
+                        </div>
+                        {/* Abstract visualization */}
+                        <div className="hidden lg:block relative w-48 h-48">
+                            <div className="absolute inset-0 bg-white/10 rounded-full animate-pulse-slow"></div>
+                            <div className="absolute inset-4 bg-white/10 rounded-full animate-pulse-slow" style={{animationDelay: '1s'}}></div>
+                            <div className="absolute inset-8 bg-white/10 rounded-full animate-pulse-slow" style={{animationDelay: '2s'}}></div>
+                            <div className="absolute inset-0 flex items-center justify-center">
+                                <svg className="w-20 h-20 text-white opacity-90 animate-float" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                            </div>
                         </div>
                     </div>
-                    {/* Abstract visualization */}
-                    <div className="hidden lg:block relative w-48 h-48">
-                        <div className="absolute inset-0 bg-white/10 rounded-full animate-pulse-slow"></div>
-                        <div className="absolute inset-4 bg-white/10 rounded-full animate-pulse-slow" style={{animationDelay: '1s'}}></div>
-                        <div className="absolute inset-8 bg-white/10 rounded-full animate-pulse-slow" style={{animationDelay: '2s'}}></div>
-                        <div className="absolute inset-0 flex items-center justify-center">
-                            <svg className="w-20 h-20 text-white opacity-90 animate-float" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-                        </div>
-                    </div>
+                    
+                    {/* Background patterns */}
+                    <div className="absolute top-0 right-0 -mt-10 -mr-10 w-64 h-64 bg-white/5 rounded-full blur-3xl"></div>
+                    <div className="absolute bottom-0 left-0 -mb-10 -ml-10 w-64 h-64 bg-indigo-500/30 rounded-full blur-3xl"></div>
                 </div>
-                
-                {/* Background patterns */}
-                <div className="absolute top-0 right-0 -mt-10 -mr-10 w-64 h-64 bg-white/5 rounded-full blur-3xl"></div>
-                <div className="absolute bottom-0 left-0 -mb-10 -ml-10 w-64 h-64 bg-indigo-500/30 rounded-full blur-3xl"></div>
             </div>
 
-            {/* Stats Grid */}
+            {/* Stats Grid - Using Staggered Entry */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <StatCard 
-                    title="اخبار پردازش شده" 
-                    value={stats.articles} 
-                    icon={<NewsIcon />} 
-                    colorClass="text-blue-600 bg-blue-100" 
-                    trend="+12%"
-                    delay="stagger-1"
-                />
-                <StatCard 
-                    title="محتوای تولید شده" 
-                    value={stats.blogs} 
-                    icon={<DocIcon />} 
-                    colorClass="text-emerald-600 bg-emerald-100" 
-                    trend="+8.5%"
-                    delay="stagger-2"
-                />
-                <StatCard 
-                    title="نویسندگان فعال" 
-                    value={stats.writers} 
-                    icon={<UsersIcon />} 
-                    colorClass="text-purple-600 bg-purple-100" 
-                    trend="ثابت"
-                    delay="stagger-3"
-                />
-                <StatCard 
-                    title="وظایف در صف" 
-                    value={stats.active_jobs || 0} 
-                    icon={<ActivityIcon />} 
-                    colorClass="text-amber-600 bg-amber-100" 
-                    trend="-2"
-                    delay="stagger-4"
-                />
+                <StatCard title="Processed News" value={stats.articles} icon={<NewsIcon />} colorClass="text-blue-600 bg-blue-100" trend="+12%" delay="delay-[100ms]" />
+                <StatCard title="Generated Content" value={stats.blogs} icon={<DocIcon />} colorClass="text-emerald-600 bg-emerald-100" trend="+8.5%" delay="delay-[200ms]" />
+                <StatCard title="Active Writers" value={stats.writers} icon={<UsersIcon />} colorClass="text-purple-600 bg-purple-100" trend="Fixed" delay="delay-[300ms]" />
+                <StatCard title="Queued Tasks" value={stats.active_jobs || 0} icon={<ActivityIcon />} colorClass="text-amber-600 bg-amber-100" trend="-2" delay="delay-[400ms]" />
             </div>
 
-            {/* Charts Section - ALWAYS RENDERED */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-card-enter">
-                {/* Views Area Chart */}
-                <div className="lg:col-span-2 bg-white p-8 rounded-3xl shadow-card border border-slate-100/50">
-                    <div className="flex justify-between items-center mb-6">
-                        <h3 className="font-bold text-slate-800 text-lg">روند بازدیدها</h3>
-                        <span className="text-xs text-slate-400 bg-slate-50 px-3 py-1 rounded-full border border-slate-100">۳۰ روز گذشته</span>
-                    </div>
-                    <div className="h-[300px]">
-                        <BlogTimelineChart data={displayData.recent_growth} />
+            {/* Quick Actions - PREMIUM REDESIGN */}
+            <ScrollTrigger>
+                <div className="mb-8">
+                    <h3 className="font-bold text-xl text-slate-800 mb-6 flex items-center gap-2">
+                        Quick Actions
+                        <span className="h-px bg-slate-200 flex-grow ml-4"></span>
+                    </h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <ActionCard 
+                            title="Daily News" 
+                            desc="Fetch & generate news blog" 
+                            icon={<NewsIcon />} 
+                            color="blue" 
+                            onClick={() => setActiveTab('agent-daily')}
+                            delay={0}
+                        />
+                        <ActionCard 
+                            title="Product Launch" 
+                            desc="Announce new features" 
+                            icon={<SpeakerIcon />} 
+                            color="purple" 
+                            onClick={() => setActiveTab('agent-feature')}
+                            delay={100}
+                        />
+                        <ActionCard 
+                            title="Content Calendar" 
+                            desc="Schedule upcoming posts" 
+                            icon={<CalendarIcon />} 
+                            color="emerald" 
+                            onClick={() => setActiveTab('calendar')}
+                            delay={200}
+                        />
+                        <ActionCard 
+                            title="Analytics" 
+                            desc="View detailed reports" 
+                            icon={<ChartIcon />} 
+                            color="amber" 
+                            onClick={() => setActiveTab('analytics')}
+                            delay={300}
+                        />
                     </div>
                 </div>
+            </ScrollTrigger>
 
-                {/* Status Pie Chart */}
-                <div className="bg-white p-8 rounded-3xl shadow-card border border-slate-100/50">
-                    <div className="flex justify-between items-center mb-6">
-                        <h3 className="font-bold text-slate-800 text-lg">وضعیت محتوا</h3>
-                        <button onClick={() => setActiveTab('blogs')} className="text-xs text-blue-600 font-bold hover:bg-blue-50 px-3 py-1 rounded-full transition-colors">مدیریت</button>
-                    </div>
-                    <div className="h-[300px]">
-                        <StatusDistributionChart data={displayData.content_status} />
-                    </div>
+            {/* Main Content Grid - REDESIGNED SECTIONS */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                
+                {/* Views Trend - Keeps existing clean style but wrapped for animation */}
+                <div className="lg:col-span-2">
+                    <ScrollTrigger>
+                        <div className="bg-white p-8 rounded-3xl shadow-card border border-slate-100/50 h-full">
+                            <div className="flex justify-between items-center mb-6">
+                                <h3 className="font-bold text-slate-800 text-lg">Views Trend</h3>
+                                <span className="text-xs text-slate-400 bg-slate-50 px-3 py-1 rounded-full border border-slate-100 font-medium">Last 30 Days</span>
+                            </div>
+                            <div className="h-[320px]">
+                                <BlogTimelineChart data={displayData.recent_growth} />
+                            </div>
+                        </div>
+                    </ScrollTrigger>
+                </div>
+
+                {/* Content Status - REDESIGNED */}
+                <div className="lg:col-span-1">
+                    <ScrollTrigger delay={100}>
+                        <div className="bg-white p-8 rounded-3xl shadow-card border border-slate-100/50 h-full flex flex-col relative overflow-hidden">
+                            <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-50 rounded-bl-full -mr-10 -mt-10 opacity-50 pointer-events-none"></div>
+                            
+                            <div className="flex justify-between items-center mb-2 relative z-10">
+                                <h3 className="font-bold text-slate-800 text-lg">Content Status</h3>
+                                <button onClick={() => setActiveTab('blogs')} className="text-emerald-600 hover:bg-emerald-50 p-2 rounded-full transition-colors">
+                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" /></svg>
+                                </button>
+                            </div>
+                            <p className="text-slate-400 text-xs mb-6 relative z-10">Distribution of all articles</p>
+                            
+                            <div className="flex-grow flex flex-col justify-center relative">
+                                <div className="h-[220px] relative z-10">
+                                    <StatusDistributionChart data={displayData.content_status} />
+                                </div>
+                                
+                                {/* Custom Legend */}
+                                <div className="mt-6 space-y-3">
+                                    <div className="flex items-center justify-between text-sm">
+                                        <div className="flex items-center gap-2">
+                                            <span className="w-3 h-3 rounded-full bg-emerald-500 shadow-sm shadow-emerald-200"></span>
+                                            <span className="text-slate-600 font-medium">Published</span>
+                                        </div>
+                                        <span className="font-bold text-slate-800">{displayData.content_status.find((s:any)=>s.name==='published')?.value || 0}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between text-sm">
+                                        <div className="flex items-center gap-2">
+                                            <span className="w-3 h-3 rounded-full bg-amber-500 shadow-sm shadow-amber-200"></span>
+                                            <span className="text-slate-600 font-medium">Draft</span>
+                                        </div>
+                                        <span className="font-bold text-slate-800">{displayData.content_status.find((s:any)=>s.name==='draft')?.value || 0}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between text-sm">
+                                        <div className="flex items-center gap-2">
+                                            <span className="w-3 h-3 rounded-full bg-blue-500 shadow-sm shadow-blue-200"></span>
+                                            <span className="text-slate-600 font-medium">Scheduled</span>
+                                        </div>
+                                        <span className="font-bold text-slate-800">{displayData.content_status.find((s:any)=>s.name==='scheduled')?.value || 0}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </ScrollTrigger>
                 </div>
             </div>
 
-            {/* Performance & Recent Activity - ALWAYS RENDERED */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-card-enter">
-                {/* Writer Performance Bar Chart */}
-                <div className="lg:col-span-2 bg-white p-8 rounded-3xl shadow-card border border-slate-100/50">
-                    <div className="flex justify-between items-center mb-6">
-                        <h3 className="font-bold text-slate-800 text-lg">عملکرد نویسندگان</h3>
-                        <button onClick={() => setActiveTab('writers')} className="text-xs text-blue-600 font-bold hover:bg-blue-50 px-3 py-1 rounded-full transition-colors">مدیریت</button>
-                    </div>
-                    <div className="h-[300px]">
-                        <WriterPerformanceChart data={displayData.writer_performance} />
-                    </div>
+            {/* Performance & Recent Activity */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Writer Performance - REDESIGNED */}
+                <div className="lg:col-span-2">
+                    <ScrollTrigger delay={200}>
+                        <div className="bg-white p-8 rounded-3xl shadow-card border border-slate-100/50 h-full">
+                            <div className="flex justify-between items-center mb-8">
+                                <div>
+                                    <h3 className="font-bold text-slate-800 text-lg">Top Writers</h3>
+                                    <p className="text-xs text-slate-400 mt-1">Based on total article views</p>
+                                </div>
+                                <button onClick={() => setActiveTab('writers')} className="text-xs font-bold text-purple-600 bg-purple-50 hover:bg-purple-100 px-4 py-2 rounded-xl transition-colors">
+                                    View All
+                                </button>
+                            </div>
+                            
+                            {/* Custom Bar Chart Replacement for Premium Look */}
+                            <div className="space-y-6">
+                                {displayData.writer_performance.map((writer: any, index: number) => {
+                                    const maxViews = Math.max(...displayData.writer_performance.map((w: any) => w.total_views));
+                                    const percent = (writer.total_views / maxViews) * 100;
+                                    
+                                    return (
+                                        <div key={index} className="group">
+                                            <div className="flex justify-between items-end mb-2">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 overflow-hidden">
+                                                        {writer.avatar ? <img src={writer.avatar} className="w-full h-full object-cover" /> : <div className="flex items-center justify-center h-full text-[10px] font-bold text-slate-400">{writer.name[0]}</div>}
+                                                    </div>
+                                                    <span className="font-bold text-slate-700 text-sm group-hover:text-purple-700 transition-colors">{writer.name}</span>
+                                                </div>
+                                                <span className="text-xs font-bold text-slate-500">{writer.total_views.toLocaleString()} <span className="font-normal text-slate-400">views</span></span>
+                                            </div>
+                                            <div className="w-full bg-slate-50 rounded-full h-3 overflow-hidden">
+                                                <div 
+                                                    className="h-full rounded-full bg-gradient-to-r from-purple-500 to-indigo-500 shadow-sm shadow-purple-200 group-hover:shadow-md transition-all duration-1000 ease-out relative"
+                                                    style={{ width: `${percent}%` }}
+                                                >
+                                                    <div className="absolute inset-0 bg-white/20 animate-[shimmer_2s_infinite]"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    </ScrollTrigger>
                 </div>
 
                 {/* Recent Drafts List */}
-                <div className="bg-white p-8 rounded-3xl shadow-card border border-slate-100/50 flex flex-col">
-                    <div className="flex justify-between items-center mb-6">
-                        <h3 className="font-bold text-slate-800 text-lg">آخرین پیش‌نویس‌ها</h3>
-                        <button onClick={() => setActiveTab('blogs')} className="text-xs text-slate-400 hover:text-slate-600">مشاهده همه</button>
-                    </div>
-                    <div className="flex-grow space-y-4">
-                        {displayData.recent_drafts && displayData.recent_drafts.length > 0 ? (
-                            displayData.recent_drafts.map((draft: any, i: number) => (
-                                <div key={i} className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100 cursor-pointer group">
-                                    <div className="w-10 h-10 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center font-bold text-xs flex-shrink-0 group-hover:scale-110 transition-transform">
-                                        <DocIcon />
+                <div className="lg:col-span-1">
+                    <ScrollTrigger delay={300}>
+                        <div className="bg-white p-8 rounded-3xl shadow-card border border-slate-100 flex flex-col h-full">
+                            <div className="flex justify-between items-center mb-6">
+                                <h3 className="font-bold text-slate-800 text-lg">Recent Drafts</h3>
+                                <button onClick={() => setActiveTab('blogs')} className="text-xs text-slate-400 hover:text-slate-600 transition-colors">View All</button>
+                            </div>
+                            <div className="flex-grow space-y-4">
+                                {displayData.recent_drafts && displayData.recent_drafts.length > 0 ? (
+                                    displayData.recent_drafts.map((draft: any, i: number) => (
+                                        <div key={i} className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50/50 border border-slate-100 hover:bg-white hover:border-amber-200 hover:shadow-md transition-all duration-300 cursor-pointer group">
+                                            <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold text-xs flex-shrink-0 group-hover:scale-110 transition-transform shadow-sm">
+                                                <DocIcon />
+                                            </div>
+                                            <div className="overflow-hidden">
+                                                <h4 className="text-sm font-bold text-slate-700 truncate group-hover:text-amber-700 transition-colors">{draft.title}</h4>
+                                                <p className="text-[10px] text-slate-400 flex items-center gap-1 mt-1 font-medium">
+                                                    <span>{draft.writer || 'Smart Writer'}</span>
+                                                    <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+                                                    <span>{new Date(draft.created_at).toLocaleDateString('en-US')}</span>
+                                                </p>
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="flex flex-col items-center justify-center h-full text-slate-400 text-sm">
+                                        <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mb-2">
+                                            <DocIcon />
+                                        </div>
+                                        <p>No drafts yet</p>
                                     </div>
-                                    <div className="overflow-hidden">
-                                        <h4 className="text-sm font-bold text-slate-700 truncate group-hover:text-blue-600 transition-colors">{draft.title}</h4>
-                                        <p className="text-xs text-slate-400 flex items-center gap-1">
-                                            <span>{draft.writer || 'نویسنده هوشمند'}</span>
-                                            <span>•</span>
-                                            <span>{new Date(draft.created_at).toLocaleDateString('fa-IR')}</span>
-                                        </p>
-                                    </div>
-                                </div>
-                            ))
-                        ) : (
-                            <div className="flex flex-col items-center justify-center h-full text-slate-400 text-sm">
-                                <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mb-2">
-                                    <DocIcon />
-                                </div>
-                                <p>هنوز پیش‌نویسی ندارید</p>
+                                )}
                             </div>
-                        )}
-                    </div>
-                    <button 
-                        onClick={() => setActiveTab('agent-daily')}
-                        className="mt-6 w-full py-2.5 rounded-xl bg-amber-50 text-amber-700 font-bold text-sm hover:bg-amber-100 transition-colors flex items-center justify-center gap-2"
-                    >
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-                        تولید محتوای جدید
-                    </button>
-                </div>
-            </div>
-
-            {/* Quick Actions Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-white rounded-3xl p-8 shadow-card border border-slate-100/50 md:col-span-2 animate-card-enter">
-                    <h3 className="font-bold text-lg text-slate-800 mb-6">دسترسی سریع</h3>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                        <button onClick={() => setActiveTab('agent-daily')} className="p-4 rounded-2xl border border-slate-100 hover:border-blue-200 hover:bg-blue-50/50 transition-all group text-right flex flex-col items-center justify-center gap-3 h-32">
-                            <div className="w-12 h-12 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm">
-                                <NewsIcon />
-                            </div>
-                            <span className="font-bold text-slate-700 text-sm group-hover:text-blue-700">اخبار روزانه</span>
-                        </button>
-                        <button onClick={() => setActiveTab('agent-feature')} className="p-4 rounded-2xl border border-slate-100 hover:border-purple-200 hover:bg-purple-50/50 transition-all group text-right flex flex-col items-center justify-center gap-3 h-32">
-                            <div className="w-12 h-12 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm">
-                                <SpeakerIcon />
-                            </div>
-                            <span className="font-bold text-slate-700 text-sm group-hover:text-purple-700">معرفی محصول</span>
-                        </button>
-                        <button onClick={() => setActiveTab('calendar')} className="p-4 rounded-2xl border border-slate-100 hover:border-emerald-200 hover:bg-emerald-50/50 transition-all group text-right flex flex-col items-center justify-center gap-3 h-32">
-                            <div className="w-12 h-12 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm">
-                                <CalendarIcon />
-                            </div>
-                            <span className="font-bold text-slate-700 text-sm group-hover:text-emerald-700">تقویم محتوا</span>
-                        </button>
-                        <button onClick={() => setActiveTab('analytics')} className="p-4 rounded-2xl border border-slate-100 hover:border-amber-200 hover:bg-amber-50/50 transition-all group text-right flex flex-col items-center justify-center gap-3 h-32">
-                            <div className="w-12 h-12 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm">
-                                <ChartIcon />
-                            </div>
-                            <span className="font-bold text-slate-700 text-sm group-hover:text-amber-700">آمار و تحلیل</span>
-                        </button>
-                    </div>
-                </div>
-
-                <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl p-8 text-white shadow-xl flex flex-col justify-between animate-card-enter overflow-hidden relative group">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16 blur-2xl group-hover:bg-white/10 transition-colors"></div>
-                    
-                    <div>
-                        <div className="w-12 h-12 bg-white/10 backdrop-blur-sm rounded-xl flex items-center justify-center mb-6 border border-white/10">
-                            <ChipIcon />
+                            <button 
+                                onClick={() => setActiveTab('agent-daily')}
+                                className="mt-6 w-full py-3 rounded-xl bg-slate-900 text-white font-bold text-sm hover:bg-slate-800 transition-all shadow-lg hover:shadow-xl active:scale-95 flex items-center justify-center gap-2 group"
+                            >
+                                <svg className="w-4 h-4 group-hover:rotate-90 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                                Create New Content
+                            </button>
                         </div>
-                        <h3 className="font-bold text-xl mb-2">Gemini 2.5 Pro</h3>
-                        <p className="text-slate-400 text-sm leading-relaxed">
-                            مدل زبانی هوشمند شما فعال است. برای تنظیمات پیشرفته کلیک کنید.
-                        </p>
-                    </div>
-                    
-                    <button 
-                        onClick={() => setActiveTab('agents')}
-                        className="mt-6 w-full py-3 rounded-xl bg-white text-slate-900 font-bold hover:bg-blue-50 transition-colors flex items-center justify-center gap-2"
-                    >
-                        <span>پیکربندی</span>
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
-                    </button>
+                    </ScrollTrigger>
                 </div>
             </div>
         </div>

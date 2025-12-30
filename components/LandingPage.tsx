@@ -27,27 +27,27 @@ export default function LandingPage({ onNavigate }: Props) {
   };
 
   return (
-    <div className="min-h-screen bg-white overflow-hidden relative font-sans text-slate-900" dir="rtl">
+    <div className="min-h-screen bg-white overflow-hidden relative font-sans text-slate-900" dir="ltr">
       {/* Navbar */}
       <nav className="fixed w-full z-50 transition-all duration-300 bg-white/80 backdrop-blur-md border-b border-slate-100">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
             <div className="flex items-center gap-3 cursor-pointer" onClick={() => window.scrollTo({top: 0, behavior: 'smooth'})}>
                 <div className="w-10 h-10 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-blue-500/30">AI</div>
-                <span className="text-xl font-extrabold text-slate-800 tracking-tight">اسمارت کانتنت</span>
+                <span className="text-xl font-extrabold text-slate-800 tracking-tight">Smart Content</span>
             </div>
             <div className="hidden md:flex items-center gap-8 text-sm font-bold text-slate-600">
-                <button onClick={() => scrollToSection('features')} className="hover:text-blue-600 transition-colors">امکانات</button>
-                <button onClick={() => scrollToSection('how-it-works')} className="hover:text-blue-600 transition-colors">نحوه کار</button>
-                <button onClick={() => scrollToSection('stats')} className="hover:text-blue-600 transition-colors">آمار</button>
-                <button onClick={() => scrollToSection('pricing')} className="hover:text-blue-600 transition-colors">تعرفه‌ها</button>
+                <button onClick={() => scrollToSection('features')} className="hover:text-blue-600 transition-colors">Features</button>
+                <button onClick={() => scrollToSection('how-it-works')} className="hover:text-blue-600 transition-colors">How it Works</button>
+                <button onClick={() => scrollToSection('stats')} className="hover:text-blue-600 transition-colors">Stats</button>
+                <button onClick={() => scrollToSection('pricing')} className="hover:text-blue-600 transition-colors">Pricing</button>
             </div>
             <div className="flex items-center gap-4">
-                <button onClick={() => onNavigate('auth')} className="text-slate-600 font-bold hover:text-blue-600 transition-colors hidden md:block">ورود</button>
+                <button onClick={() => onNavigate('auth')} className="text-slate-600 font-bold hover:text-blue-600 transition-colors hidden md:block">Login</button>
                 <button 
                     onClick={() => onNavigate('auth')}
                     className="px-5 py-2.5 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition-all shadow-lg hover:shadow-xl active:scale-95 text-sm"
                 >
-                    شروع رایگان
+                    Get Started
                 </button>
             </div>
         </div>
@@ -57,19 +57,19 @@ export default function LandingPage({ onNavigate }: Props) {
       <section className="relative z-10 pt-32 pb-20 px-6 max-w-7xl mx-auto">
         <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
           {/* Text Content */}
-          <div className="lg:w-1/2 text-center lg:text-right space-y-8 animate-slide-up relative z-10">
+          <div className="lg:w-1/2 text-center lg:text-left space-y-8 animate-slide-up relative z-10">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 border border-blue-100 text-blue-600 text-xs font-bold animate-page-enter hover:bg-blue-100 transition-colors cursor-default">
               <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse"></span>
-              نسخه ۲.۵ جمینای پرو فعال شد
+              Gemini Pro 2.5 Enabled
             </div>
             
             <h1 className="text-5xl md:text-7xl font-extrabold leading-tight text-slate-900 tracking-tight">
-              <span className="block mb-2">تولید محتوا با</span>
-              <span className="text-gradient bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600">سرعت نور</span>
+              <span className="block mb-2">Content Generation at</span>
+              <span className="text-gradient bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600">Light Speed</span>
             </h1>
             
             <p className="text-lg md:text-xl text-slate-500 leading-relaxed max-w-2xl mx-auto lg:mx-0 font-medium">
-              دستیار هوشمندی که صدای برند شما را یاد می‌گیرد، اخبار صنعت را رصد می‌کند و مقالاتی می‌نویسد که گوگل عاشق آن‌هاست.
+              An intelligent assistant that learns your brand voice, monitors industry news, and writes articles that Google loves.
             </p>
             
             <div className="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start pt-4">
@@ -77,17 +77,17 @@ export default function LandingPage({ onNavigate }: Props) {
                 onClick={() => onNavigate('auth')}
                 className="w-full sm:w-auto px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold text-lg shadow-glow hover:shadow-glow-lg transition-all active:scale-95 flex items-center justify-center gap-2 group"
               >
-                <span>ساخت حساب رایگان</span>
-                <svg className="w-5 h-5 rotate-180 group-hover:-translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
+                <span>Create Free Account</span>
+                <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
               </button>
               <button className="w-full sm:w-auto px-8 py-4 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-2xl font-bold text-lg transition-all flex items-center justify-center gap-2 group shadow-sm hover:shadow-md">
                 <svg className="w-10 h-10 text-blue-600 group-hover:scale-110 transition-transform" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
-                <span>مشاهده دمو</span>
+                <span>View Demo</span>
               </button>
             </div>
 
             <div className="pt-8 opacity-80">
-               <p className="font-bold text-slate-400 text-sm mb-4">مورد اعتماد تیم‌های پیشرو در ایران:</p>
+               <p className="font-bold text-slate-400 text-sm mb-4">Trusted by leading teams:</p>
                <div className="flex flex-wrap justify-center lg:justify-start gap-8 items-center grayscale opacity-60 hover:grayscale-0 hover:opacity-100 transition-all duration-500">
                   {['Digikala', 'Snapp', 'Divar', 'Torob', 'Bazaar'].map(name => (
                       <span key={name} className="text-xl font-black text-slate-300 hover:text-slate-600 cursor-default select-none">{name}</span>
@@ -109,20 +109,20 @@ export default function LandingPage({ onNavigate }: Props) {
           <div className="max-w-7xl mx-auto px-6 relative z-10">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center divide-x divide-slate-800 divide-x-reverse">
                   <div className="p-4">
-                      <div className="text-4xl font-extrabold text-blue-400 mb-2">۲+ میلیون</div>
-                      <div className="text-sm text-slate-400 font-medium">کلمه تولید شده</div>
+                      <div className="text-4xl font-extrabold text-blue-400 mb-2">2M+</div>
+                      <div className="text-sm text-slate-400 font-medium">Words Generated</div>
                   </div>
                   <div className="p-4">
-                      <div className="text-4xl font-extrabold text-purple-400 mb-2">۵۰۰+</div>
-                      <div className="text-sm text-slate-400 font-medium">کسب‌وکار فعال</div>
+                      <div className="text-4xl font-extrabold text-purple-400 mb-2">500+</div>
+                      <div className="text-sm text-slate-400 font-medium">Active Businesses</div>
                   </div>
                   <div className="p-4">
-                      <div className="text-4xl font-extrabold text-emerald-400 mb-2">۹۸٪</div>
-                      <div className="text-sm text-slate-400 font-medium">رضایت کاربران</div>
+                      <div className="text-4xl font-extrabold text-emerald-400 mb-2">98%</div>
+                      <div className="text-sm text-slate-400 font-medium">User Satisfaction</div>
                   </div>
                   <div className="p-4">
-                      <div className="text-4xl font-extrabold text-amber-400 mb-2">۲۴/۷</div>
-                      <div className="text-sm text-slate-400 font-medium">پشتیبانی آنلاین</div>
+                      <div className="text-4xl font-extrabold text-amber-400 mb-2">24/7</div>
+                      <div className="text-sm text-slate-400 font-medium">Online Support</div>
                   </div>
               </div>
           </div>
@@ -132,51 +132,51 @@ export default function LandingPage({ onNavigate }: Props) {
       <section id="features" className="bg-slate-50 py-24 relative overflow-hidden">
          <div className="max-w-7xl mx-auto px-6">
             <div className="text-center mb-16 space-y-4">
-               <span className="text-blue-600 font-bold text-sm bg-blue-50 px-3 py-1 rounded-full border border-blue-100">امکانات پلتفرم</span>
-               <h2 className="text-3xl md:text-5xl font-extrabold text-slate-900">جعبه‌ابزار کامل محتوا</h2>
-               <p className="text-slate-500 max-w-2xl mx-auto text-lg">ما پیچیدگی هوش مصنوعی را حذف کردیم تا شما روی رشد کسب‌وکارتان تمرکز کنید.</p>
+               <span className="text-blue-600 font-bold text-sm bg-blue-50 px-3 py-1 rounded-full border border-blue-100">Platform Features</span>
+               <h2 className="text-3xl md:text-5xl font-extrabold text-slate-900">Complete Content Toolkit</h2>
+               <p className="text-slate-500 max-w-2xl mx-auto text-lg">We removed the complexity of AI so you can focus on growing your business.</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                <FeatureCard 
                   icon={<svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" /></svg>}
-                  title="خبرنگار هوشمند"
-                  desc="سیستم به طور ۲۴ ساعته وب را برای اخبار مرتبط با حوزه کاری شما جستجو می‌کند و ایده‌های داغ محتوایی پیشنهاد می‌دهد."
+                  title="Smart Reporter"
+                  desc="The system monitors the web 24/7 for news related to your industry and suggests hot content ideas."
                   color="blue"
                   delay="stagger-1"
                />
                <FeatureCard 
                   icon={<svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>}
-                  title="نویسنده خلاق"
-                  desc="با تعریف لحن برند و پرسوناهای مختلف، محتوایی تولید کنید که انگار توسط بهترین کپی‌رایترهای بازار نوشته شده است."
+                  title="Creative Writer"
+                  desc="Define brand voice and personas to produce content that reads like it was written by top copywriters."
                   color="purple"
                   delay="stagger-2"
                />
                <FeatureCard 
                   icon={<svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 002 2h2a2 2 0 002-2z" /></svg>}
-                  title="متخصص سئو"
-                  desc="تمام محتواها به طور خودکار با اصول سئو بهینه می‌شوند. از کلمات کلیدی تا متا دسکریپشن، همه چیز آماده است."
+                  title="SEO Specialist"
+                  desc="All content is automatically optimized for SEO. From keywords to meta descriptions, everything is ready."
                   color="emerald"
                   delay="stagger-3"
                />
                <FeatureCard 
                   icon={<svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>}
-                  title="تقویم محتوایی"
-                  desc="برنامه‌ریزی کنید و با خیال راحت بخوابید. سیستم به صورت خودکار محتواها را در زمان تعیین شده منتشر می‌کند."
+                  title="Content Calendar"
+                  desc="Plan and sleep soundly. The system automatically publishes content at the scheduled time."
                   color="amber"
                   delay="stagger-1"
                />
                <FeatureCard 
                   icon={<svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" /></svg>}
-                  title="معرفی محصول"
-                  desc="فقط مشخصات محصول جدید را وارد کنید تا اطلاعیه‌های جذاب برای وبلاگ، ایمیل و شبکه‌های اجتماعی دریافت کنید."
+                  title="Product Launch"
+                  desc="Just enter the new product details to get engaging announcements for blogs, emails, and social media."
                   color="rose"
                   delay="stagger-2"
                />
                <FeatureCard 
                   icon={<svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>}
-                  title="تحلیل عملکرد"
-                  desc="داشبورد آماری کامل برای رصد بازدیدها، تعامل کاربران و عملکرد نویسندگان هوشمند شما."
+                  title="Performance Analytics"
+                  desc="Complete statistical dashboard to monitor views, user engagement, and your smart writers' performance."
                   color="indigo"
                   delay="stagger-3"
                />
@@ -186,9 +186,9 @@ export default function LandingPage({ onNavigate }: Props) {
 
       {/* Feature Deep Dive 1 */}
       <FeatureSpotlight 
-        title="تبدیل اخبار به محتوا، در لحظه"
-        description="دیگر نگران پیدا کردن موضوع برای بلاگ نباشید. دستیار هوشمند ما وب را برای اخبار مرتبط با صنعت شما زیر و رو می‌کند و داغ‌ترین موضوعات را شناسایی کرده و به مقالات جذاب تبدیل می‌کند."
-        benefits={['رصد ۲۴ ساعته منابع خبری معتبر', 'تحلیل و استخراج نکات کلیدی', 'تولید محتوا با رعایت اصول نگارشی']}
+        title="Turn News into Content, Instantly"
+        description="Stop worrying about finding blog topics. Our smart assistant scours the web for industry news, identifies hot topics, and turns them into engaging articles."
+        benefits={['24/7 monitoring of trusted sources', 'Analysis and key point extraction', 'Content generation following writing principles']}
         image={
             <div className="bg-white p-6 rounded-[2rem] shadow-2xl border border-slate-100 transform rotate-2 hover:rotate-0 transition-transform duration-500">
                 <div className="flex items-center gap-4 mb-4 border-b border-slate-100 pb-4">
@@ -196,8 +196,8 @@ export default function LandingPage({ onNavigate }: Props) {
                         <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" /></svg>
                     </div>
                     <div>
-                        <h4 className="font-bold text-slate-800">خبر جدید یافت شد</h4>
-                        <p className="text-xs text-slate-500">منبع: TechCrunch • همین الان</p>
+                        <h4 className="font-bold text-slate-800">News Alert Found</h4>
+                        <p className="text-xs text-slate-500">Source: TechCrunch • Just now</p>
                     </div>
                 </div>
                 <div className="space-y-3">
@@ -206,7 +206,7 @@ export default function LandingPage({ onNavigate }: Props) {
                     <div className="h-4 bg-slate-100 rounded w-5/6"></div>
                 </div>
                 <div className="mt-6 flex justify-end">
-                    <button className="px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-bold shadow-lg shadow-blue-200">تولید مقاله</button>
+                    <button className="px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-bold shadow-lg shadow-blue-200">Generate Article</button>
                 </div>
             </div>
         }
@@ -214,33 +214,33 @@ export default function LandingPage({ onNavigate }: Props) {
 
       {/* Feature Deep Dive 2 */}
       <FeatureSpotlight 
-        title="نویسندگانی با شخصیت‌های واقعی"
-        description="محتوای خشک و ماشینی را فراموش کنید. در اسمارت کانتنت می‌توانید نویسندگانی با شخصیت، لحن و سبک نگارش خاص خودتان تعریف کنید تا مخاطب اصلا متوجه هوش مصنوعی نشود."
-        benefits={['تعریف لحن رسمی، دوستانه یا طنز', 'تقلید سبک نگارش برند شما', 'ایجاد تنوع در محتوا با چندین نویسنده']}
+        title="Writers with Real Personalities"
+        description="Forget dry, robotic content. With Smart Content, you can define writers with specific personalities, tones, and styles so the audience never notices it's AI."
+        benefits={['Define formal, friendly, or humorous tones', 'Mimic your brand writing style', 'Create content variety with multiple writers']}
         image={
             <div className="grid grid-cols-2 gap-4">
                 <div className="bg-white p-4 rounded-2xl shadow-lg border border-slate-100 transform -translate-y-4">
                     <div className="flex items-center gap-3 mb-2">
                         <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Ali" className="w-10 h-10 rounded-full bg-slate-100" />
                         <div>
-                            <p className="font-bold text-sm text-slate-800">علی (تکنولوژی)</p>
-                            <p className="text-xs text-slate-400">لحن: تخصصی و دقیق</p>
+                            <p className="font-bold text-sm text-slate-800">Alex (Tech)</p>
+                            <p className="text-xs text-slate-400">Tone: Technical & Precise</p>
                         </div>
                     </div>
                     <div className="text-[10px] text-slate-500 leading-relaxed">
-                        طبق بررسی‌های فنی انجام شده...
+                        According to recent technical benchmarks...
                     </div>
                 </div>
                 <div className="bg-white p-4 rounded-2xl shadow-lg border border-slate-100 transform translate-y-4">
                     <div className="flex items-center gap-3 mb-2">
                         <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Sara" className="w-10 h-10 rounded-full bg-slate-100" />
                         <div>
-                            <p className="font-bold text-sm text-slate-800">سارا (لایف‌استایل)</p>
-                            <p className="text-[10px] text-slate-400">لحن: صمیمی و گرم</p>
+                            <p className="font-bold text-sm text-slate-800">Sarah (Lifestyle)</p>
+                            <p className="text-[10px] text-slate-400">Tone: Friendly & Warm</p>
                         </div>
                     </div>
                     <div className="text-[10px] text-slate-500 leading-relaxed">
-                        سلام دوستان! امروز میخوایم راجع به...
+                        Hey friends! Today we're diving into...
                     </div>
                 </div>
             </div>
@@ -253,8 +253,8 @@ export default function LandingPage({ onNavigate }: Props) {
       <section id="how-it-works" className="py-24 relative bg-slate-50">
           <div className="max-w-7xl mx-auto px-6">
             <div className="text-center mb-20 space-y-4">
-               <h2 className="text-3xl md:text-5xl font-extrabold text-slate-900">چگونه کار می‌کند؟</h2>
-               <p className="text-slate-500 max-w-2xl mx-auto text-lg">سه گام ساده تا اتوماسیون کامل محتوای کسب‌وکار شما</p>
+               <h2 className="text-3xl md:text-5xl font-extrabold text-slate-900">How it Works?</h2>
+               <p className="text-slate-500 max-w-2xl mx-auto text-lg">Three simple steps to complete content automation for your business</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-12 relative">
@@ -262,23 +262,23 @@ export default function LandingPage({ onNavigate }: Props) {
                 <div className="hidden md:block absolute top-12 left-10 right-10 h-0.5 bg-gradient-to-r from-blue-200 via-purple-200 to-emerald-200 z-0"></div>
 
                 <StepCard 
-                    number="۱"
-                    title="تنظیم هویت برند"
-                    desc="اطلاعات شرکت، محصولات و لحن صحبت برند خود را وارد کنید تا هوش مصنوعی دقیقا مثل شما صحبت کند."
+                    number="1"
+                    title="Set Brand Identity"
+                    desc="Enter company info, products, and brand voice so the AI speaks exactly like you."
                     icon={<svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0c0 .884-.56 1.613-1.355 1.904" /></svg>}
                     color="blue"
                 />
                 <StepCard 
-                    number="۲"
-                    title="فعال‌سازی ایجنت‌ها"
-                    desc="دستیار اخبار، محقق یا نویسنده را فعال کنید و زمان‌بندی دلخواه خود را برای تولید محتوا تنظیم نمایید."
+                    number="2"
+                    title="Activate Agents"
+                    desc="Enable news, research, or writer agents and set your preferred schedule for content generation."
                     icon={<svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>}
                     color="purple"
                 />
                 <StepCard 
-                    number="۳"
-                    title="انتشار و رشد"
-                    desc="محتوای آماده شده را بررسی کرده و با یک کلیک در وبلاگ یا شبکه‌های اجتماعی خود منتشر کنید."
+                    number="3"
+                    title="Publish & Grow"
+                    desc="Review the prepared content and publish it to your blog or social media with one click."
                     icon={<svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>}
                     color="emerald"
                 />
@@ -290,37 +290,37 @@ export default function LandingPage({ onNavigate }: Props) {
       <section id="pricing" className="py-24 bg-white">
           <div className="max-w-7xl mx-auto px-6">
             <div className="text-center mb-16 space-y-4">
-               <h2 className="text-3xl md:text-5xl font-extrabold text-slate-900">پلن‌های منعطف</h2>
-               <p className="text-slate-500 max-w-2xl mx-auto text-lg">از رایگان شروع کنید و متناسب با رشد کسب‌وکارتان ارتقا دهید.</p>
+               <h2 className="text-3xl md:text-5xl font-extrabold text-slate-900">Flexible Plans</h2>
+               <p className="text-slate-500 max-w-2xl mx-auto text-lg">Start for free and upgrade as your business grows.</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
                 <PricingCard 
-                    title="شروع"
-                    price="رایگان"
-                    period="همیشه"
-                    features={['۵ مقاله در ماه', 'دسترسی به Gemini Flash', '۱ نویسنده هوشمند', 'پشتیبانی ایمیلی', 'داشبورد پایه']}
-                    buttonText="شروع رایگان"
+                    title="Starter"
+                    price="Free"
+                    period="Forever"
+                    features={['5 articles/month', 'Access to Gemini Flash', '1 Smart Writer', 'Email Support', 'Basic Dashboard']}
+                    buttonText="Start Free"
                     active={false}
                     onClick={() => onNavigate('auth')}
                 />
                 <PricingCard 
-                    title="حرفه‌ای"
-                    price="۴۹۹"
-                    currency="هزار تومان"
-                    period="ماهانه"
-                    features={['۳۰ مقاله در ماه', 'دسترسی به Gemini Pro', '۵ نویسنده هوشمند', 'تحقیق کلمات کلیدی', 'پشتیبانی اولویت‌دار', 'تقویم محتوایی پیشرفته']}
-                    buttonText="شروع دوره آزمایشی"
+                    title="Professional"
+                    price="$19"
+                    currency="USD"
+                    period="/month"
+                    features={['30 articles/month', 'Access to Gemini Pro', '5 Smart Writers', 'Keyword Research', 'Priority Support', 'Advanced Calendar']}
+                    buttonText="Start Trial"
                     active={true}
                     onClick={() => onNavigate('auth')}
                     popular
                 />
                 <PricingCard 
-                    title="سازمانی"
-                    price="تماس بگیرید"
+                    title="Enterprise"
+                    price="Contact Us"
                     period=""
-                    features={['مقاله نامحدود', 'مدل اختصاصی فاین‌تیون شده', 'نویسنده نامحدود', 'API دسترسی مستقیم', 'مدیر اکانت اختصاصی', 'SLA تضمین شده']}
-                    buttonText="مشاوره رایگان"
+                    features={['Unlimited Articles', 'Custom Fine-tuned Model', 'Unlimited Writers', 'Direct API Access', 'Dedicated Account Manager', 'Guaranteed SLA']}
+                    buttonText="Free Consultation"
                     active={false}
                     onClick={() => onNavigate('auth')}
                 />
@@ -334,26 +334,26 @@ export default function LandingPage({ onNavigate }: Props) {
           <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-yellow-100/40 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
           
           <div className="max-w-7xl mx-auto px-6 relative z-10">
-              <h2 className="text-3xl md:text-5xl font-extrabold text-center mb-16 text-slate-900">تیم‌های موفق چه می‌گویند؟</h2>
+              <h2 className="text-3xl md:text-5xl font-extrabold text-center mb-16 text-slate-900">What do successful teams say?</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                   <TestimonialCard 
-                     quote="با استفاده از این سیستم، ترافیک بلاگ ما در عرض ۳ ماه دو برابر شد. کیفیت مقالات واقعا باورنکردنی است."
-                     author="سارا محمدی"
-                     role="مدیر مارکتینگ دیجی‌تک"
+                     quote="Using this system, our blog traffic doubled in 3 months. The article quality is truly incredible."
+                     author="Sarah M."
+                     role="Marketing Manager"
                      image="https://api.dicebear.com/7.x/avataaars/svg?seed=Sara"
                      delay="stagger-1"
                   />
                   <TestimonialCard 
-                     quote="دیگر نگران پر کردن تقویم محتوایی نیستم. ایجنت اخبار همیشه موضوعات داغ را پیدا می‌کند و می‌نویسد."
-                     author="علی حسینی"
-                     role="سردبیر مجله نوین"
+                     quote="I no longer worry about filling the content calendar. The news agent always finds hot topics and writes them."
+                     author="Ali H."
+                     role="Chief Editor"
                      image="https://api.dicebear.com/7.x/avataaars/svg?seed=Ali"
                      delay="stagger-2"
                   />
                   <TestimonialCard 
-                     quote="به عنوان یک استارتاپ کوچک، هزینه استخدام نویسنده نداشتیم. این ابزار نجات‌بخش ما بود."
-                     author="رضا کریمی"
-                     role="بنیان‌گذار استارتاپ"
+                     quote="As a small startup, we couldn't afford a writer. This tool was our lifesaver."
+                     author="Reza K."
+                     role="Startup Founder"
                      image="https://api.dicebear.com/7.x/avataaars/svg?seed=Reza"
                      delay="stagger-3"
                   />
@@ -364,29 +364,29 @@ export default function LandingPage({ onNavigate }: Props) {
       {/* FAQ */}
       <section id="faq" className="py-24 bg-white relative">
           <div className="max-w-3xl mx-auto px-6">
-              <h2 className="text-3xl md:text-5xl font-extrabold text-center mb-12 text-slate-900">سوالات متداول</h2>
+              <h2 className="text-3xl md:text-5xl font-extrabold text-center mb-12 text-slate-900">Frequently Asked Questions</h2>
               <div className="space-y-4">
                   <FaqItem 
-                    question="آیا محتوای تولید شده کپی است؟"
-                    answer="خیر، هوش مصنوعی ما هر بار محتوا را از صفر و به صورت کاملاً یونیک تولید می‌کند. همچنین محتوا بر اساس لحن برند شما شخصی‌سازی می‌شود."
+                    question="Is the generated content unique?"
+                    answer="Yes, our AI generates content from scratch every time, completely unique. It is also personalized based on your brand voice."
                     isOpen={openFaq === 0}
                     onClick={() => toggleFaq(0)}
                   />
                   <FaqItem 
-                    question="آیا برای سئو مناسب است؟"
-                    answer="بله، تمام مقالات با رعایت اصول سئو، ساختار درست هدینگ‌ها و استفاده از کلمات کلیدی مرتبط تولید می‌شوند."
+                    question="Is it suitable for SEO?"
+                    answer="Yes, all articles are produced following SEO principles, proper heading structures, and relevant keyword usage."
                     isOpen={openFaq === 1}
                     onClick={() => toggleFaq(1)}
                   />
                   <FaqItem 
-                    question="آیا می‌توانم محتوا را ویرایش کنم؟"
-                    answer="بله، شما به یک ویرایشگر کامل دسترسی دارید و می‌توانید قبل از انتشار، هر تغییری که لازم است را اعمال کنید."
+                    question="Can I edit the content?"
+                    answer="Yes, you have access to a full editor and can make any necessary changes before publishing."
                     isOpen={openFaq === 2}
                     onClick={() => toggleFaq(2)}
                   />
                   <FaqItem 
-                    question="آیا از زبان فارسی پشتیبانی کامل دارد؟"
-                    answer="بله، مدل‌های ما به طور خاص برای تولید محتوای روان و طبیعی به زبان فارسی بهینه شده‌اند."
+                    question="Does it support English/Persian fully?"
+                    answer="Yes, our models are specifically optimized to produce fluent and natural content in multiple languages, including English and Persian."
                     isOpen={openFaq === 3}
                     onClick={() => toggleFaq(3)}
                   />
@@ -404,16 +404,16 @@ export default function LandingPage({ onNavigate }: Props) {
           
           <div className="max-w-4xl mx-auto text-center relative z-10 text-white space-y-10">
               <h2 className="text-4xl md:text-6xl font-extrabold leading-tight tracking-tight">
-                  آماده‌اید محتوای خود را <br/>
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-200 to-indigo-200">متحول کنید؟</span>
+                  Ready to transform <br/>
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-200 to-indigo-200">your content?</span>
               </h2>
-              <p className="text-xl text-slate-300 max-w-2xl mx-auto font-light">همین امروز شروع کنید و اولین مقاله خود را در کمتر از ۵ دقیقه تحویل بگیرید. بدون نیاز به کارت اعتباری.</p>
+              <p className="text-xl text-slate-300 max-w-2xl mx-auto font-light">Start today and get your first article in less than 5 minutes. No credit card required.</p>
               <div className="flex flex-col sm:flex-row justify-center gap-6">
                   <button onClick={() => onNavigate('auth')} className="px-10 py-5 bg-white text-slate-900 rounded-2xl font-bold text-xl hover:bg-blue-50 transition-all shadow-glow hover:shadow-glow-lg hover:-translate-y-1 active:translate-y-0 active:scale-95">
-                      شروع رایگان
+                      Get Started
                   </button>
                   <button className="px-10 py-5 bg-transparent border-2 border-slate-700 hover:border-slate-500 text-white rounded-2xl font-bold text-xl transition-all hover:bg-white/5">
-                      مشاوره فروش
+                      Sales Consultation
                   </button>
               </div>
           </div>
@@ -426,39 +426,39 @@ export default function LandingPage({ onNavigate }: Props) {
                 <div className="col-span-1 md:col-span-5 space-y-6">
                     <div className="flex items-center gap-2">
                         <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-blue-900/50">AI</div>
-                        <span className="font-bold text-white text-2xl tracking-tight">اسمارت کانتنت</span>
+                        <span className="font-bold text-white text-2xl tracking-tight">Smart Content</span>
                     </div>
-                    <p className="text-base leading-relaxed text-slate-500 max-w-md">پلتفرم جامع هوش مصنوعی برای تولید، مدیریت و انتشار محتوای متنی با کیفیت بالا. ما به شما کمک می‌کنیم صدای برند خود را پیدا کنید.</p>
+                    <p className="text-base leading-relaxed text-slate-500 max-w-md">Comprehensive AI platform for generating, managing, and publishing high-quality text content. We help you find your brand voice.</p>
                     
                     <div className="pt-4">
-                        <h5 className="text-white font-bold mb-4 text-sm">عضویت در خبرنامه</h5>
+                        <h5 className="text-white font-bold mb-4 text-sm">Subscribe to Newsletter</h5>
                         <div className="flex gap-2 max-w-sm">
-                            <input type="email" placeholder="ایمیل خود را وارد کنید" className="bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white w-full focus:outline-none focus:border-blue-600 transition-colors" />
-                            <button className="bg-blue-600 hover:bg-blue-500 text-white px-6 rounded-xl font-bold text-sm transition-colors">عضویت</button>
+                            <input type="email" placeholder="Enter your email" className="bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white w-full focus:outline-none focus:border-blue-600 transition-colors" />
+                            <button className="bg-blue-600 hover:bg-blue-500 text-white px-6 rounded-xl font-bold text-sm transition-colors">Subscribe</button>
                         </div>
                     </div>
                 </div>
                 
                 <div className="col-span-1 md:col-span-2">
-                    <h4 className="text-white font-bold mb-6 text-lg">محصول</h4>
+                    <h4 className="text-white font-bold mb-6 text-lg">Product</h4>
                     <ul className="space-y-4 text-sm font-medium">
-                        <li><button onClick={() => scrollToSection('features')} className="hover:text-blue-400 transition-colors block py-1 w-full text-right">امکانات</button></li>
-                        <li><button onClick={() => scrollToSection('pricing')} className="hover:text-blue-400 transition-colors block py-1 w-full text-right">تعرفه‌ها</button></li>
-                        <li><button onClick={() => scrollToSection('how-it-works')} className="hover:text-blue-400 transition-colors block py-1 w-full text-right">نحوه کار</button></li>
+                        <li><button onClick={() => scrollToSection('features')} className="hover:text-blue-400 transition-colors block py-1 w-full text-left">Features</button></li>
+                        <li><button onClick={() => scrollToSection('pricing')} className="hover:text-blue-400 transition-colors block py-1 w-full text-left">Pricing</button></li>
+                        <li><button onClick={() => scrollToSection('how-it-works')} className="hover:text-blue-400 transition-colors block py-1 w-full text-left">How it Works</button></li>
                     </ul>
                 </div>
                 
                 <div className="col-span-1 md:col-span-2">
-                    <h4 className="text-white font-bold mb-6 text-lg">منابع</h4>
+                    <h4 className="text-white font-bold mb-6 text-lg">Resources</h4>
                     <ul className="space-y-4 text-sm font-medium">
-                        <li><button onClick={() => onNavigate('guide')} className="hover:text-blue-400 transition-colors block py-1 w-full text-right">راهنمای استفاده</button></li>
-                        <li><button onClick={() => onNavigate('privacy')} className="hover:text-blue-400 transition-colors block py-1 w-full text-right">حریم خصوصی</button></li>
-                        <li><button onClick={() => onNavigate('terms')} className="hover:text-blue-400 transition-colors block py-1 w-full text-right">قوانین و مقررات</button></li>
+                        <li><button onClick={() => onNavigate('guide')} className="hover:text-blue-400 transition-colors block py-1 w-full text-left">User Guide</button></li>
+                        <li><button onClick={() => onNavigate('privacy')} className="hover:text-blue-400 transition-colors block py-1 w-full text-left">Privacy Policy</button></li>
+                        <li><button onClick={() => onNavigate('terms')} className="hover:text-blue-400 transition-colors block py-1 w-full text-left">Terms of Service</button></li>
                     </ul>
                 </div>
                 
                 <div className="col-span-1 md:col-span-3">
-                    <h4 className="text-white font-bold mb-6 text-lg">اطلاعات تماس</h4>
+                    <h4 className="text-white font-bold mb-6 text-lg">Contact Us</h4>
                     <ul className="space-y-4 text-sm font-medium">
                         <li className="flex items-center gap-3">
                             <svg className="w-5 h-5 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
@@ -466,24 +466,24 @@ export default function LandingPage({ onNavigate }: Props) {
                         </li>
                         <li className="flex items-center gap-3">
                             <svg className="w-5 h-5 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
-                            ۰۲۱-۸۸۸۸۸۸۸۸
+                            +1-888-888-8888
                         </li>
                         <li className="flex items-center gap-3">
                             <svg className="w-5 h-5 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                            تهران، خیابان ولیعصر، برج فناوری
+                            Tech Tower, Valley St, City
                         </li>
                     </ul>
                 </div>
             </div>
             
             <div className="flex flex-col md:flex-row justify-between items-center text-sm font-medium">
-                <p>تمامی حقوق محفوظ است © ۱۴۰۳ اسمارت کانتنت</p>
+                <p>All rights reserved © 2024 Smart Content</p>
                 <div className="flex gap-6 mt-4 md:mt-0">
-                    <button onClick={() => onNavigate('privacy')} className="hover:text-white transition-colors">حریم خصوصی</button>
-                    <button onClick={() => onNavigate('terms')} className="hover:text-white transition-colors">قوانین</button>
+                    <button onClick={() => onNavigate('privacy')} className="hover:text-white transition-colors">Privacy</button>
+                    <button onClick={() => onNavigate('terms')} className="hover:text-white transition-colors">Terms</button>
                     <div className="flex items-center gap-2">
                         <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                        <span className="text-green-500">سیستم‌ها فعال</span>
+                        <span className="text-green-500">Systems Operational</span>
                     </div>
                 </div>
             </div>
@@ -504,10 +504,10 @@ const HeroAnimation = () => {
   }, []);
 
   const steps = [
-    { title: "رصد اخبار", desc: "جستجوی هوشمندانه در وب", color: "blue" },
-    { title: "تحلیل داده", desc: "استخراج نکات کلیدی", color: "purple" },
-    { title: "نگارش خلاق", desc: "تولید محتوا با لحن برند", color: "amber" },
-    { title: "انتشار خودکار", desc: "زمان‌بندی و ارسال", color: "emerald" }
+    { title: "News Monitoring", desc: "Smart web search", color: "blue" },
+    { title: "Data Analysis", desc: "Key points extraction", color: "purple" },
+    { title: "Creative Writing", desc: "On-brand content", color: "amber" },
+    { title: "Auto Publishing", desc: "Schedule & Post", color: "emerald" }
   ];
 
   return (
@@ -577,7 +577,7 @@ const SearchVisual = () => (
     <div className="absolute inset-0 flex flex-col items-center justify-center p-8">
         {/* Search Bar */}
         <div className="w-full h-12 bg-white rounded-xl shadow-sm border border-slate-200 flex items-center px-4 mb-8 relative overflow-hidden">
-            <svg className="w-5 h-5 text-slate-400 ml-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+            <svg className="w-5 h-5 text-slate-400 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
             <div className="h-2 w-32 bg-slate-100 rounded"></div>
             {/* Shimmer on search bar */}
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent animate-[shimmer_2s_infinite]"></div>
@@ -675,7 +675,7 @@ const WritingVisual = () => (
                 <div className="relative">
                     <div className="h-2 bg-slate-200 rounded w-0 animate-[width-grow_0.5s_forwards_2.9s] max-w-[70%]"></div>
                     {/* Blinking Cursor at the end of the last line */}
-                    <div className="absolute top-0 right-[72%] h-2 w-0.5 bg-amber-500 animate-[pulse_0.8s_infinite] opacity-0 animate-[fade-in_0.1s_forwards_3.4s]"></div>
+                    <div className="absolute top-0 left-[72%] h-2 w-0.5 bg-amber-500 animate-[pulse_0.8s_infinite] opacity-0 animate-[fade-in_0.1s_forwards_3.4s]"></div>
                 </div>
             </div>
         </div>
@@ -694,8 +694,8 @@ const PublishVisual = () => (
             
             {/* Text State Change */}
             <div className="relative h-8 overflow-hidden mb-2">
-                <h4 className="font-bold text-slate-800 absolute w-full animate-[slide-up-out_0.5s_forwards_1.2s]">در حال انتشار...</h4>
-                <h4 className="font-bold text-green-600 absolute w-full translate-y-10 animate-[slide-up-in_0.5s_forwards_1.2s]">انتشار موفق!</h4>
+                <h4 className="font-bold text-slate-800 absolute w-full animate-[slide-up-out_0.5s_forwards_1.2s]">Publishing...</h4>
+                <h4 className="font-bold text-green-600 absolute w-full translate-y-10 animate-[slide-up-in_0.5s_forwards_1.2s]">Published!</h4>
             </div>
 
             {/* Progress Bar */}
@@ -759,7 +759,7 @@ const PricingCard = ({ title, price, currency, period, features, buttonText, act
         }`}>
             {popular && (
                 <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gradient-to-r from-blue-500 to-purple-500 text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-lg">
-                    پیشنهاد ویژه
+                    Popular
                 </div>
             )}
             
@@ -831,7 +831,7 @@ const FaqItem = ({ question, answer, isOpen, onClick }: any) => {
         >
             <button 
                 onClick={onClick}
-                className="w-full flex items-center justify-between p-6 text-right font-bold text-slate-800 transition-colors"
+                className="w-full flex items-center justify-between p-6 text-left font-bold text-slate-800 transition-colors"
             >
                 <span className={`text-lg ${isOpen ? 'text-blue-700' : 'text-slate-700'}`}>{question}</span>
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 ${
