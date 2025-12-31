@@ -70,7 +70,11 @@ export const handleCalendar = async (request: Request, db: DatabaseService) => {
     }
 
     if (method === 'POST') {
-        const body = await request.json() as any;
+        let body: any = {};
+        try {
+            body = await request.json();
+        } catch(e) { return createErrorResponse('Invalid JSON', 400); }
+
         const { blog_id, scheduled_date } = body;
         
         if (!blog_id || !scheduled_date) return createErrorResponse('Missing fields', 400);

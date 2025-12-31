@@ -1,31 +1,38 @@
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 import { Env, NewsArticle } from "../../types";
 
-const MODEL_FAST = 'gemini-2.5-flash';
+const MODEL_FAST = 'gemini-3-flash-preview'; // Updated to 3 Flash
 const MODEL_QUALITY = 'gemini-3-pro-preview';
 
 export class GeminiService {
   private ai: GoogleGenAI;
 
   constructor(env: Env) {
-    this.ai = new GoogleGenAI({ apiKey: env.GEMINI_API_KEY });
+    this.ai = new GoogleGenAI({ apiKey: env.API_KEY || process.env.API_KEY });
   }
 
   private safeJsonParse(text: string | undefined): any {
     if (!text) return {};
+    
+    // 1. Try cleaning Markdown code blocks
+    let cleanText = text.replace(/```json\s*|```/g, '').trim();
+    
     try {
-      const cleanText = text.replace(/```json\n?|\n?```/g, '').trim();
       const parsed = JSON.parse(cleanText);
       if (parsed && typeof parsed === 'object') return parsed;
-    } catch (e) {}
-    try {
-      const match = text.match(/(\{[\s\S]*\}|\[[\s\S]*\])/);
-      if (match) {
-        const extracted = JSON.parse(match[0]);
-        if (extracted && typeof extracted === 'object') return extracted;
-      }
-    } catch (e) {}
-    console.warn("Gemini JSON Parse Failed:", text.substring(0, 100));
+    } catch (e) {
+        // 2. Fallback: Extract first JSON object or array using regex
+        try {
+            // Match { ... } or [ ... ] across multiple lines
+            const match = text.match(/(\{[\s\S]*\}|\[[\s\S]*\])/);
+            if (match) {
+                const extracted = JSON.parse(match[0]);
+                if (extracted && typeof extracted === 'object') return extracted;
+            }
+        } catch (e2) {}
+    }
+    
+    console.warn("Gemini JSON Parse Failed. Raw text:", text.substring(0, 100) + "...");
     return {};
   }
 

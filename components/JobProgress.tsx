@@ -16,7 +16,9 @@ export default function JobProgress({ jobId, onComplete, onCancel }: JobProgress
     const interval = setInterval(async () => {
       try {
         const res = await fetch(`/api/agent-jobs/${jobId}`);
-        if (res.ok) {
+        const contentType = res.headers.get("content-type");
+        
+        if (res.ok && contentType && contentType.includes("application/json")) {
           const data = await res.json();
           const jobData = data.data || data;
           setJob(jobData);

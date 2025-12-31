@@ -1,3 +1,4 @@
+
 import { ApiResponse } from '../types';
 
 export const createResponse = <T>(
@@ -10,15 +11,29 @@ export const createResponse = <T>(
     data,
     message,
   };
-  return new Response(JSON.stringify(responseBody), {
-    status,
-    headers: {
-      'Content-Type': 'application/json; charset=utf-8',
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
-    },
-  });
+  
+  try {
+    // Handle BigInt serialization safety
+    const json = JSON.stringify(responseBody, (key, value) =>
+        typeof value === 'bigint' ? value.toString() : value
+    );
+    
+    return new Response(json, {
+        status,
+        headers: {
+        'Content-Type': 'application/json; charset=utf-8',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type',
+        },
+    });
+  } catch (e) {
+      console.error("Response Serialization Error:", e);
+      return new Response(JSON.stringify({ success: false, error: "Internal Serialization Error" }), {
+          status: 500,
+          headers: { 'Content-Type': 'application/json' }
+      });
+  }
 };
 
 export const createErrorResponse = (

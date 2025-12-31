@@ -5,7 +5,7 @@ export type AppView = 'landing' | 'auth' | 'dashboard' | 'updates' | 'blog' | 'g
 // Environment Bindings
 export interface Env {
   DB: any; // Using any to avoid importing 'better-sqlite3' in shared types which breaks browser
-  GEMINI_API_KEY: string;
+  API_KEY: string; // Updated to match standard naming
 }
 
 // Database Entities
@@ -64,7 +64,18 @@ export interface AgentSettings {
   id: number;
   model_config: string; // JSON: temperature, model_name
   schedule_config: string; // JSON: cron expressions
+  integrations?: string; // JSON: droplinked_api_key, etc.
   is_active: number; // Boolean 0/1
+  updated_at: string;
+}
+
+export interface UserSettings {
+  id: number;
+  first_name: string;
+  last_name: string;
+  email: string;
+  password?: string;
+  avatar_url?: string;
   updated_at: string;
 }
 
@@ -78,8 +89,10 @@ export interface ResearchTask {
 
 export interface FeatureAnnouncement {
   id: number;
+  product_name?: string;
   feature_name: string;
   description: string;
+  custom_instructions?: string;
   status: 'draft' | 'processed';
   created_at: string;
 }

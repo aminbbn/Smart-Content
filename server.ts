@@ -3,6 +3,7 @@ import { serve } from '@hono/node-server';
 import { serveStatic } from '@hono/node-server/serve-static';
 import { Hono } from 'hono';
 import { api } from './api/routes';
+import { createErrorResponse } from './utils/helpers';
 
 const app = new Hono();
 
@@ -15,8 +16,8 @@ app.use('*', async (c, next) => {
 });
 
 // 1. Mount API Routes
-// Note: We mount at root because api routes already include /api/ prefix
-app.route('/', api);
+// API routes are defined relative to /api
+app.route('/api', api);
 
 // 2. Serve Frontend (Dist)
 app.use('/*', serveStatic({ root: './dist' }));
@@ -25,7 +26,7 @@ app.use('/*', serveStatic({ root: './dist' }));
 // This ensures that 404s on API routes don't return HTML, only non-API routes do
 app.get('*', (c) => {
   if (c.req.path.startsWith('/api/')) {
-    return c.json({ error: 'Not Found', path: c.req.path }, 404);
+    return createErrorResponse('Not Found', 404);
   }
   return serveStatic({ path: './dist/index.html' })(c, async () => {});
 });

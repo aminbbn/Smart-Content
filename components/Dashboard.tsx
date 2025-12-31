@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, Suspense, useRef } from 'react';
 import NotificationCenter from './NotificationCenter';
 import { BlogTimelineChart, WriterPerformanceChart, StatusDistributionChart } from './Charts';
@@ -5,7 +6,7 @@ import { BlogTimelineChart, WriterPerformanceChart, StatusDistributionChart } fr
 // Icons
 const HomeIcon = () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>;
 const BuildingIcon = () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>;
-const ChipIcon = () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" /></svg>;
+const ChipIcon = () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>;
 const UsersIcon = () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>;
 const DocIcon = () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>;
 const NewsIcon = () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" /></svg>;
@@ -26,7 +27,6 @@ const ResearchAgentView = React.lazy(() => import('./ResearchAgentView'));
 const FeatureAnnouncementView = React.lazy(() => import('./FeatureAnnouncementView'));
 const ContentCalendar = React.lazy(() => import('./ContentCalendar'));
 const AnalyticsDashboard = React.lazy(() => import('./AnalyticsDashboard'));
-const MonitoringDashboard = React.lazy(() => import('./MonitoringDashboard'));
 const NotificationsView = React.lazy(() => import('./NotificationsView'));
 
 // --- Utility: Scroll Trigger ---
@@ -67,12 +67,13 @@ const ScrollTrigger = ({ children, className = "", delay = 0 }: React.PropsWithC
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState('overview');
   
-  // Initialize with MOCK DATA immediately
-  const [stats, setStats] = useState({ 
+  // Initialize with MOCK DATA immediately, updated by useEffect
+  const [stats, setStats] = useState<any>({ 
       articles: 142, 
       blogs: 38, 
       writers: 4, 
-      active_jobs: 2 
+      active_jobs: 2,
+      droplinked: null 
   });
   
   const [chartData, setChartData] = useState<any>({
@@ -98,6 +99,21 @@ export default function Dashboard() {
       ]
   });
 
+  useEffect(() => {
+      const fetchStats = async () => {
+          try {
+              const res = await fetch('/api/stats');
+              if (res.ok) {
+                  const json = await res.json();
+                  if (json.success) {
+                      setStats(json.data);
+                  }
+              }
+          } catch(e) { console.error("Failed to fetch dashboard stats", e); }
+      };
+      fetchStats();
+  }, [activeTab]); // Refetch when tab changes to ensure up-to-date
+
   const renderContent = () => {
     return (
         <Suspense fallback={
@@ -120,7 +136,6 @@ export default function Dashboard() {
                     case 'agent-feature': return <FeatureAnnouncementView />;
                     case 'calendar': return <ContentCalendar />;
                     case 'analytics': return <AnalyticsDashboard />;
-                    case 'monitoring': return <MonitoringDashboard />;
                     case 'notifications': return <NotificationsView />;
                     default: return <Overview stats={stats} chartData={chartData} setActiveTab={setActiveTab} />;
                 }
@@ -177,9 +192,8 @@ export default function Dashboard() {
             <div className="px-4 py-3 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mt-6">System Management</div>
             <NavItem id="blogs" label="Content Library" icon={<DocIcon />} />
             <NavItem id="writers" label="Writers" icon={<UsersIcon />} />
-            <NavItem id="monitoring" label="Monitoring" icon={<ActivityIcon />} />
             <NavItem id="company" label="Company Settings" icon={<BuildingIcon />} />
-            <NavItem id="agents" label="Configuration" icon={<ChipIcon />} />
+            <NavItem id="agents" label="Settings" icon={<ChipIcon />} />
         </nav>
 
         {/* User Profile Snippet */}
@@ -224,6 +238,11 @@ export default function Dashboard() {
                      activeTab === 'agent-research' ? 'Research Assistant' : 
                      activeTab === 'blogs' ? 'Content Library' : 
                      activeTab === 'notifications' ? 'Notifications Center' : 
+                     activeTab === 'agents' ? 'Settings' :
+                     activeTab === 'company' ? 'Company Profile' :
+                     activeTab === 'writers' ? 'Writers' :
+                     activeTab === 'calendar' ? 'Calendar' :
+                     activeTab === 'analytics' ? 'Analytics' :
                      'Management Panel'}
                  </h2>
                  <p className="text-xs text-slate-400 font-medium mt-1">
@@ -300,6 +319,56 @@ const ActionCard = ({ icon, title, desc, onClick, color, delay }: any) => {
     );
 }
 
+const DroplinkedSection = ({ data }: { data: any }) => {
+    return (
+        <ScrollTrigger>
+            <div className="mb-8 relative group">
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-900 to-slate-900 rounded-[2rem] shadow-2xl opacity-100 transition-all duration-500 group-hover:shadow-blue-900/30"></div>
+                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20 rounded-[2rem]"></div>
+                
+                <div className="relative p-8 flex flex-col md:flex-row items-center justify-between gap-8">
+                    {/* Header Side */}
+                    <div className="flex items-center gap-6">
+                        <div className="w-16 h-16 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/20 shadow-inner">
+                            <svg className="w-8 h-8 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                        </div>
+                        <div>
+                            <div className="flex items-center gap-2 mb-1">
+                                <h3 className="text-2xl font-extrabold text-white tracking-tight">Droplinked Integration</h3>
+                                <div className="px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                                    Active
+                                </div>
+                            </div>
+                            <p className="text-blue-200/80 text-sm font-medium">Syncing product data directly from your shop.</p>
+                        </div>
+                    </div>
+
+                    {/* Stats Grid */}
+                    <div className="flex-1 w-full md:w-auto">
+                        <div className="grid grid-cols-3 gap-4">
+                            <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-4 text-center hover:bg-white/10 transition-colors">
+                                <div className="text-3xl font-bold text-white mb-1">{data.products_count || 0}</div>
+                                <div className="text-[10px] text-blue-200 font-bold uppercase tracking-wide">Products</div>
+                            </div>
+                            <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-4 text-center hover:bg-white/10 transition-colors">
+                                <div className="text-3xl font-bold text-white mb-1">{data.blogs_published || 0}</div>
+                                <div className="text-[10px] text-blue-200 font-bold uppercase tracking-wide">Generated Blogs</div>
+                            </div>
+                            <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-4 text-center hover:bg-white/10 transition-colors">
+                                <div className="text-lg font-bold text-white mb-1 pt-1.5">
+                                    {data.last_sync ? new Date(data.last_sync).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '-'}
+                                </div>
+                                <div className="text-[10px] text-blue-200 font-bold uppercase tracking-wide">Last Sync</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </ScrollTrigger>
+    );
+};
+
 const Overview = ({ stats, chartData, setActiveTab }: any) => {
     // Force data structure for charts to avoid "undefined" errors during loading
     const displayData = chartData || {
@@ -352,6 +421,9 @@ const Overview = ({ stats, chartData, setActiveTab }: any) => {
                     <div className="absolute bottom-0 left-0 -mb-10 -ml-10 w-64 h-64 bg-indigo-500/30 rounded-full blur-3xl"></div>
                 </div>
             </div>
+
+            {/* Droplinked Section - Only appears if connected */}
+            {stats.droplinked && <DroplinkedSection data={stats.droplinked} />}
 
             {/* Stats Grid - Using Staggered Entry */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

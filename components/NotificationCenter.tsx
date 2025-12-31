@@ -34,10 +34,12 @@ export default function NotificationCenter({ align = 'right', onViewArchive }: P
     const fetchNotifications = async () => {
         try {
             const res = await fetch('/api/notifications');
-            const json = await res.json();
-            if (json.success) {
-                setNotifications(json.data.notifications);
-                setUnreadCount(json.data.unreadCount);
+            if (res.ok && res.headers.get('content-type')?.includes('application/json')) {
+                const json = await res.json();
+                if (json.success) {
+                    setNotifications(json.data.notifications);
+                    setUnreadCount(json.data.unreadCount);
+                }
             }
         } catch (e) { console.error(e); }
     };

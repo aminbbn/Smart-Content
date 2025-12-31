@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { AppView } from '../types';
 
@@ -69,7 +70,7 @@ export default function LandingPage({ onNavigate }: Props) {
             </h1>
             
             <p className="text-lg md:text-xl text-slate-500 leading-relaxed max-w-2xl mx-auto lg:mx-0 font-medium">
-              An intelligent assistant that learns your brand voice, monitors industry news, and writes articles that Google loves.
+              An intelligent assistant that learns your brand voice, scans industry news on demand, and writes articles that Google loves.
             </p>
             
             <div className="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start pt-4">
@@ -141,7 +142,7 @@ export default function LandingPage({ onNavigate }: Props) {
                <FeatureCard 
                   icon={<svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" /></svg>}
                   title="Smart Reporter"
-                  desc="The system monitors the web 24/7 for news related to your industry and suggests hot content ideas."
+                  desc="The system monitors the web for news related to your industry and suggests hot content ideas on demand."
                   color="blue"
                   delay="stagger-1"
                />
@@ -188,7 +189,7 @@ export default function LandingPage({ onNavigate }: Props) {
       <FeatureSpotlight 
         title="Turn News into Content, Instantly"
         description="Stop worrying about finding blog topics. Our smart assistant scours the web for industry news, identifies hot topics, and turns them into engaging articles."
-        benefits={['24/7 monitoring of trusted sources', 'Analysis and key point extraction', 'Content generation following writing principles']}
+        benefits={['Intelligent monitoring of trusted sources', 'Analysis and key point extraction', 'Content generation following writing principles']}
         image={
             <div className="bg-white p-6 rounded-[2rem] shadow-2xl border border-slate-100 transform rotate-2 hover:rotate-0 transition-transform duration-500">
                 <div className="flex items-center gap-4 mb-4 border-b border-slate-100 pb-4">
@@ -271,7 +272,7 @@ export default function LandingPage({ onNavigate }: Props) {
                 <StepCard 
                     number="2"
                     title="Activate Agents"
-                    desc="Enable news, research, or writer agents and set your preferred schedule for content generation."
+                    desc="Enable news, research, or writer agents to generate content on demand."
                     icon={<svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>}
                     color="purple"
                 />
@@ -481,10 +482,6 @@ export default function LandingPage({ onNavigate }: Props) {
                 <div className="flex gap-6 mt-4 md:mt-0">
                     <button onClick={() => onNavigate('privacy')} className="hover:text-white transition-colors">Privacy</button>
                     <button onClick={() => onNavigate('terms')} className="hover:text-white transition-colors">Terms</button>
-                    <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                        <span className="text-green-500">Systems Operational</span>
-                    </div>
                 </div>
             </div>
          </div>

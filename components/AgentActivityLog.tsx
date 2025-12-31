@@ -23,6 +23,13 @@ export default function AgentActivityLog({
     const fetchJobs = async () => {
       try {
         const res = await fetch(`/api/agent-jobs?limit=${limit}`);
+        
+        // Handle non-JSON responses (like 404 HTML pages) gracefully to avoid parsing errors
+        const contentType = res.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+             return; // Silently fail for non-JSON responses
+        }
+
         if (!res.ok) throw new Error(`Status: ${res.status}`);
         
         const json = await res.json();

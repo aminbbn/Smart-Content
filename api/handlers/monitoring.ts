@@ -4,7 +4,9 @@ import { logger } from '../../utils/logger';
 
 export const handleMonitoring = async (request: Request, db: DatabaseService) => {
     const url = new URL(request.url);
-    const path = url.pathname.replace('/api/monitoring/', '');
+    // Robust path extraction: find everything after /api/monitoring/
+    const match = url.pathname.match(/\/api\/monitoring\/(.+)/);
+    const path = match ? match[1] : '';
     
     if (request.method !== 'GET') return createErrorResponse('Method not allowed', 405);
 

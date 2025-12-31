@@ -34,7 +34,11 @@ export const handleWriters = async (request: Request, db: DatabaseService) => {
   }
 
   if (id && (method === 'PUT' || method === 'PATCH')) {
-    const body = await request.json() as any;
+    let body: any = {};
+    try {
+        body = await request.json();
+    } catch(e) { return createErrorResponse('Invalid JSON', 400); }
+
     const { name, bio, personality, style, avatar_url } = body;
     
     await db.execute(
@@ -129,7 +133,11 @@ export const handleWriters = async (request: Request, db: DatabaseService) => {
   }
 
   if (method === 'POST') {
-    const body = await request.json() as any;
+    let body: any = {};
+    try {
+        body = await request.json();
+    } catch(e) { return createErrorResponse('Invalid JSON', 400); }
+
     const { name, bio, personality, style, avatar_url } = body;
     
     const count = await db.queryOne<{c: number}>('SELECT count(*) as c FROM writers');

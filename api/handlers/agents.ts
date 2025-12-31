@@ -9,7 +9,9 @@ import { Env, AgentJob } from '../../types';
 
 export const handleAgents = async (request: Request, env: Env, db: DatabaseService, ctx: ExecutionContext) => {
   const url = new URL(request.url);
-  const path = url.pathname.replace('/api/agents/', '');
+  // Robust path extraction: find everything after /api/agents/
+  const match = url.pathname.match(/\/api\/agents\/(.+)/);
+  const path = match ? match[1] : '';
   const method = request.method;
 
   try {
@@ -75,7 +77,6 @@ export const handleAgents = async (request: Request, env: Env, db: DatabaseServi
       const body = await request.json() as any;
       const agent = new FeatureAnnouncementAgent(env, db);
       
-      // Updated to pass product name and custom instructions
       const id = await agent.createAnnouncement(
           body.productName, 
           body.featureName, 
@@ -109,30 +110,6 @@ export const handleAgents = async (request: Request, env: Env, db: DatabaseServi
 };
 
 export const handleJobs = async (request: Request, db: DatabaseService) => {
-    const url = new URL(request.url);
-    const pathParts = url.pathname.split('/'); 
-    const id = pathParts.length > 3 ? pathParts[3] : null;
-
-    try {
-        if (id) {
-             const job = await db.queryOne<AgentJob>('SELECT * FROM agent_jobs WHERE id = ?', [id]);
-             if (!job) return createErrorResponse('Job not found', 404);
-             return createResponse(job);
-        } 
-        else {
-            const limitParam = url.searchParams.get('limit');
-            const limit = limitParam ? parseInt(limitParam, 10) : 50;
-            const safeLimit = Math.min(Math.max(limit, 1), 100);
-            
-            const jobs = await db.query<AgentJob>(
-                `SELECT * FROM agent_jobs ORDER BY created_at DESC LIMIT ?`, 
-                [safeLimit]
-            );
-            
-            return createResponse(jobs);
-        }
-    } catch (err: any) {
-        console.error("HandleJobs Error:", err);
-        return createErrorResponse('Failed to fetch jobs');
-    }
+    // This function seems unused in routing but kept for reference
+    return createErrorResponse('Use /api/agent-jobs endpoints instead');
 };

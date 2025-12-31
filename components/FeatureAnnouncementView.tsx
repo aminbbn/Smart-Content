@@ -60,19 +60,23 @@ export default function FeatureAnnouncementView() {
     const fetchItems = async () => {
         try {
             const res = await fetch('/api/agents/feature-announcement/list');
-            const json = await res.json();
-            if (json.success) setItems(json.data);
+            if (res.ok && res.headers.get('content-type')?.includes('application/json')) {
+                const json = await res.json();
+                if (json.success) setItems(json.data);
+            }
         } catch (e) { console.error(e); }
     };
 
     const fetchWriters = async () => {
         try {
             const res = await fetch('/api/writers');
-            const json = await res.json();
-            if (json.success) {
-                setWriters(json.data);
-                const def = json.data.find((w: Writer) => w.is_default);
-                if (def) setSelectedWriter(def.id);
+            if (res.ok && res.headers.get('content-type')?.includes('application/json')) {
+                const json = await res.json();
+                if (json.success) {
+                    setWriters(json.data);
+                    const def = json.data.find((w: Writer) => w.is_default);
+                    if (def) setSelectedWriter(def.id);
+                }
             }
         } catch (e) { console.error(e); }
     };
@@ -80,11 +84,13 @@ export default function FeatureAnnouncementView() {
     const fetchProducts = async () => {
         try {
             const res = await fetch('/api/settings/company');
-            const json = await res.json();
-            if (json.success && json.data.product_info) {
-                setProducts(json.data.product_info);
-                if (json.data.product_info.length > 0) {
-                    setSelectedProduct(json.data.product_info[0].name);
+            if (res.ok && res.headers.get('content-type')?.includes('application/json')) {
+                const json = await res.json();
+                if (json.success && json.data.product_info) {
+                    setProducts(json.data.product_info);
+                    if (json.data.product_info.length > 0) {
+                        setSelectedProduct(json.data.product_info[0].name);
+                    }
                 }
             }
         } catch (e) { console.error(e); }

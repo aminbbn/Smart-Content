@@ -12,8 +12,10 @@ export default function NewsList() {
             setLoading(true);
             try {
                 const res = await fetch('/api/news-articles');
-                const json = await res.json();
-                if (json.success) setArticles(json.data);
+                if (res.ok && res.headers.get('content-type')?.includes('application/json')) {
+                    const json = await res.json();
+                    if (json.success) setArticles(json.data);
+                }
             } catch (e) { console.error(e); }
             setLoading(false);
         };

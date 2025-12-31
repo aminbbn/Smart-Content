@@ -57,19 +57,23 @@ export default function ResearchAgentView() {
     const fetchTasks = async () => {
         try {
             const res = await fetch('/api/agents/research/tasks');
-            const json = await res.json();
-            if (json.success) setTasks(json.data);
+            if (res.ok && res.headers.get('content-type')?.includes('application/json')) {
+                const json = await res.json();
+                if (json.success) setTasks(json.data);
+            }
         } catch (e) { console.error(e); }
     };
 
     const fetchWriters = async () => {
         try {
             const res = await fetch('/api/writers');
-            const json = await res.json();
-            if (json.success) {
-                setWriters(json.data);
-                const def = json.data.find((w: Writer) => w.is_default);
-                if (def) setSelectedWriter(def.id);
+            if (res.ok && res.headers.get('content-type')?.includes('application/json')) {
+                const json = await res.json();
+                if (json.success) {
+                    setWriters(json.data);
+                    const def = json.data.find((w: Writer) => w.is_default);
+                    if (def) setSelectedWriter(def.id);
+                }
             }
         } catch (e) { console.error(e); }
     };
@@ -78,9 +82,11 @@ export default function ResearchAgentView() {
         setSuggestionsLoading(true);
         try {
             const res = await fetch('/api/agents/research/suggest');
-            const json = await res.json();
-            if (json.success && Array.isArray(json.data)) {
-                setSuggestions(json.data);
+            if (res.ok && res.headers.get('content-type')?.includes('application/json')) {
+                const json = await res.json();
+                if (json.success && Array.isArray(json.data)) {
+                    setSuggestions(json.data);
+                }
             }
         } catch (e) { console.error(e); }
         setSuggestionsLoading(false);

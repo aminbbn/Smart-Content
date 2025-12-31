@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Blog } from '../types';
 import { formatDate } from '../utils/helpers';
@@ -24,8 +25,10 @@ export default function BlogLibrary() {
         setLoading(true);
         try {
             const res = await fetch('/api/blogs');
-            const json = await res.json();
-            if (json.success) setBlogs(json.data);
+            if (res.ok && res.headers.get('content-type')?.includes('application/json')) {
+                const json = await res.json();
+                if (json.success) setBlogs(json.data);
+            }
         } catch (e) { console.error(e); }
         setLoading(false);
     };

@@ -24,7 +24,19 @@ try {
       id INTEGER PRIMARY KEY,
       model_config TEXT,
       schedule_config TEXT,
+      integrations TEXT,
       is_active INTEGER,
+      updated_at TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS user_settings (
+      id INTEGER PRIMARY KEY,
+      first_name TEXT,
+      last_name TEXT,
+      email TEXT,
+      password TEXT,
+      avatar_url TEXT,
+      api_key TEXT,
       updated_at TEXT
     );
 
@@ -123,12 +135,20 @@ try {
   try { db.exec("ALTER TABLE company_settings ADD COLUMN description TEXT"); } catch (e) {}
   try { db.exec("ALTER TABLE company_settings ADD COLUMN core_values TEXT"); } catch (e) {}
   try { db.exec("ALTER TABLE writers ADD COLUMN is_default INTEGER DEFAULT 0"); } catch (e) {}
-  
-  // Migrations for feature_announcements
   try { db.exec("ALTER TABLE feature_announcements ADD COLUMN product_name TEXT"); } catch (e) {}
   try { db.exec("ALTER TABLE feature_announcements ADD COLUMN custom_instructions TEXT"); } catch (e) {}
-
+  try { db.exec("ALTER TABLE agent_settings ADD COLUMN integrations TEXT"); } catch (e) {}
+  try { db.exec("ALTER TABLE user_settings ADD COLUMN api_key TEXT"); } catch (e) {}
+  
   // --- AUTO SEEDING ---
+  
+  // Seed User Settings
+  const userCount = db.prepare('SELECT count(*) as count FROM user_settings').get() as { count: number };
+  if (userCount.count === 0) {
+      db.prepare(`INSERT INTO user_settings (id, first_name, last_name, email, password, avatar_url, updated_at) VALUES (1, 'Admin', 'User', 'admin@company.com', 'password123', 'https://api.dicebear.com/7.x/avataaars/svg?seed=Admin', CURRENT_TIMESTAMP)`).run();
+      logger.info('Seeded user settings');
+  }
+
   const writerCount = db.prepare('SELECT count(*) as count FROM writers').get() as { count: number };
   if (writerCount.count === 0) {
       const writers = [

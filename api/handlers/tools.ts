@@ -5,14 +5,21 @@ import { Env, CompanySettings } from '../../types';
 
 export const handleTools = async (request: Request, env: Env, db: DatabaseService) => {
     const url = new URL(request.url);
-    const path = url.pathname.replace('/api/tools/', '');
+    // Robust path extraction: find everything after /api/tools/
+    const match = url.pathname.match(/\/api\/tools\/(.+)/);
+    const path = match ? match[1] : '';
     const method = request.method;
     const gemini = new GeminiService(env);
 
     if (method !== 'POST') return createErrorResponse('Method not allowed', 405);
 
     try {
-        const body = await request.json() as any;
+        let body: any = {};
+        try {
+            body = await request.json();
+        } catch (e) {
+            return createErrorResponse('Invalid JSON body', 400);
+        }
 
         if (path === 'seo') {
             if (!body.content) return createErrorResponse('Content is required', 400);
