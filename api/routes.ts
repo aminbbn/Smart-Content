@@ -16,6 +16,7 @@ import { handleAnalytics } from './handlers/analytics';
 import { handleMonitoring } from './handlers/monitoring';
 import { handleNotifications } from './handlers/notifications';
 import { handleJobCancel, handleJobStatus } from './handlers/jobs';
+import { handleSupportChat } from './handlers/chatbot';
 
 const api = new Hono<{ Bindings: Env }>();
 
@@ -217,6 +218,11 @@ api.all('/monitoring/*', (c) => handleMonitoring(c.req.raw, dbInstance));
 api.post('/tools/*', (c) => {
      const env: Env = { DB: null as any, API_KEY: process.env.API_KEY || '' };
      return handleTools(c.req.raw, env, dbInstance);
+});
+
+api.post('/support/chat', (c) => {
+    const env: Env = { DB: null as any, API_KEY: process.env.API_KEY || '' };
+    return handleSupportChat(c.req.raw, env, dbInstance);
 });
 
 export { api };

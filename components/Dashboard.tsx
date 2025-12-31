@@ -426,11 +426,10 @@ const Overview = ({ stats, chartData, setActiveTab }: any) => {
             {stats.droplinked && <DroplinkedSection data={stats.droplinked} />}
 
             {/* Stats Grid - Using Staggered Entry */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <StatCard title="Processed News" value={stats.articles} icon={<NewsIcon />} colorClass="text-blue-600 bg-blue-100" trend="+12%" delay="delay-[100ms]" />
                 <StatCard title="Generated Content" value={stats.blogs} icon={<DocIcon />} colorClass="text-emerald-600 bg-emerald-100" trend="+8.5%" delay="delay-[200ms]" />
                 <StatCard title="Active Writers" value={stats.writers} icon={<UsersIcon />} colorClass="text-purple-600 bg-purple-100" trend="Fixed" delay="delay-[300ms]" />
-                <StatCard title="Queued Tasks" value={stats.active_jobs || 0} icon={<ActivityIcon />} colorClass="text-amber-600 bg-amber-100" trend="-2" delay="delay-[400ms]" />
             </div>
 
             {/* Quick Actions - PREMIUM REDESIGN */}

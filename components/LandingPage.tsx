@@ -1,6 +1,6 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { AppView } from '../types';
+import ChatWidget from './ChatWidget';
 
 interface Props {
   onNavigate: (view: AppView) => void;
@@ -486,8 +486,142 @@ export default function LandingPage({ onNavigate }: Props) {
             </div>
          </div>
       </footer>
+
+      {/* Support Chat Widget */}
+      <ChatWidget />
     </div>
   );
+}
+
+const ScrollReveal: React.FC<{ children?: React.ReactNode; delay?: number }> = ({ children, delay = 0 }) => {
+  const [isVisible, setIsVisible] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.15, rootMargin: '50px' }
+    );
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div
+      ref={ref}
+      className={`transition-all duration-1000 ease-out transform ${
+        isVisible ? 'opacity-100 translate-y-0 filter blur-0' : 'opacity-0 translate-y-12 filter blur-sm'
+      }`}
+      style={{ transitionDelay: `${delay}ms` }}
+    >
+      {children}
+    </div>
+  );
+};
+
+const PolicySection = ({ icon, title, text, color }: any) => {
+    const bgColors = {
+        blue: 'bg-blue-100 text-blue-600',
+        emerald: 'bg-emerald-100 text-emerald-600',
+        rose: 'bg-rose-100 text-rose-600'
+    };
+
+    return (
+        <div className="flex items-start gap-6 group">
+            <div className={`w-14 h-14 rounded-2xl flex-shrink-0 flex items-center justify-center transition-transform duration-300 group-hover:scale-110 ${bgColors[color as keyof typeof bgColors]}`}>
+                {icon}
+            </div>
+            <div>
+                <h3 className="text-xl font-bold text-slate-800 mb-3 group-hover:text-blue-600 transition-colors">{title}</h3>
+                <p className="text-slate-600 leading-loose text-justify text-base">{text}</p>
+            </div>
+        </div>
+    );
+}
+
+const UpdateCard = ({ version, date, title, description, features, color, align }: any) => {
+    const isRight = align === 'right';
+    return (
+        <div className={`flex flex-col md:flex-row gap-8 relative items-center md:items-start ${!isRight ? 'md:flex-row-reverse' : ''}`}>
+            {/* Timeline Dot */}
+            <div className={`absolute top-0 w-6 h-6 rounded-full border-4 border-white shadow-lg z-10 hidden md:block left-1/2 -translate-x-1/2 ${
+                color === 'blue' ? 'bg-blue-600' : color === 'purple' ? 'bg-purple-600' : 'bg-slate-600'
+            }`}></div>
+
+            <div className={`w-full md:w-1/2 ${isRight ? 'md:pr-12 md:text-right' : 'md:pl-12 md:text-left'}`}>
+               <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold mb-2 ${
+                   color === 'blue' ? 'bg-blue-100 text-blue-700' : color === 'purple' ? 'bg-purple-100 text-purple-700' : 'bg-slate-100 text-slate-700'
+               }`}>
+                   Version {version}
+               </span>
+               <span className="block text-xs text-slate-400 font-bold mb-4">{date}</span>
+            </div>
+
+            <div className="w-full md:w-1/2">
+                <div className={`bg-white p-8 rounded-3xl shadow-card border border-slate-100 hover:shadow-card-hover transition-all group ${
+                    color === 'blue' ? 'hover:border-blue-200' : color === 'purple' ? 'hover:border-purple-200' : 'hover:border-slate-300'
+                }`}>
+                    <h3 className="text-xl font-bold text-slate-800 mb-4">{title}</h3>
+                    <p className="text-slate-600 leading-relaxed text-sm mb-6">{description}</p>
+                    <ul className="space-y-2">
+                        {features.map((f: string, i: number) => (
+                            <li key={i} className="flex items-center gap-2 text-sm text-slate-500">
+                                <svg className={`w-4 h-4 ${color === 'blue' ? 'text-blue-500' : color === 'purple' ? 'text-purple-500' : 'text-slate-500'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                                {f}
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+const GuideStep = ({ number, title, desc, icon, action, align = 'left' }: any) => {
+    return (
+        <div className={`relative flex items-center justify-between md:justify-center group ${align === 'right' ? 'md:flex-row-reverse' : ''}`}>
+            {/* Center Line Marker */}
+            <div className="absolute left-6 md:left-1/2 w-4 h-4 bg-white border-4 border-emerald-500 rounded-full z-10 transform -translate-x-1/2 shadow-lg shadow-emerald-500/30 group-hover:scale-125 transition-transform duration-300 hidden md:block"></div>
+            <div className="absolute left-6 w-4 h-4 bg-white border-4 border-emerald-500 rounded-full z-10 transform -translate-x-1/2 shadow-lg shadow-emerald-500/30 md:hidden"></div>
+
+            {/* Empty space for timeline balance */}
+            <div className="hidden md:block w-5/12"></div>
+
+            {/* Content Card */}
+            <div className={`w-[calc(100%-3rem)] md:w-5/12 ml-12 md:ml-0 pl-4 md:pl-0`}>
+                <div className="bg-white p-6 md:p-8 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 relative overflow-hidden group-hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] group-hover:-translate-y-1 transition-all duration-500 ease-out">
+                    {/* Number Watermark */}
+                    <div className="absolute -right-4 -top-6 text-9xl font-black text-slate-50 opacity-50 select-none z-0 group-hover:text-emerald-50/80 transition-colors duration-500 font-sans">
+                        {number}
+                    </div>
+
+                    <div className="relative z-10">
+                        <div className="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600 mb-6 shadow-sm group-hover:scale-110 group-hover:rotate-3 transition-transform duration-500 ease-out">
+                            {icon}
+                        </div>
+                        
+                        <h3 className="text-xl font-bold text-slate-800 mb-3 group-hover:text-emerald-700 transition-colors duration-300">{title}</h3>
+                        <p className="text-slate-500 leading-relaxed mb-6 font-medium text-sm md:text-base">
+                            {desc}
+                        </p>
+
+                        <button 
+                            onClick={action.onClick}
+                            className="inline-flex items-center gap-2 text-sm font-bold text-emerald-600 hover:text-emerald-700 transition-colors group/btn"
+                        >
+                            <span>{action.label}</span>
+                            <svg className="w-4 h-4 transform group-hover/btn:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
 }
 
 const HeroAnimation = () => {
@@ -567,8 +701,6 @@ const HeroAnimation = () => {
     </div>
   );
 }
-
-// --- Visual Sub-Components ---
 
 const SearchVisual = () => (
     <div className="absolute inset-0 flex flex-col items-center justify-center p-8">

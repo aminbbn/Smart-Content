@@ -76,6 +76,7 @@ export interface UserSettings {
   email: string;
   password?: string;
   avatar_url?: string;
+  api_key?: string;
   updated_at: string;
 }
 
