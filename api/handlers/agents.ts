@@ -1,3 +1,4 @@
+
 import { ExecutionContext } from '@cloudflare/workers-types';
 import { DatabaseService } from '../../database/db';
 import { createResponse, createErrorResponse } from '../../utils/helpers';
@@ -14,8 +15,9 @@ export const handleAgents = async (request: Request, env: Env, db: DatabaseServi
   try {
     // --- DAILY NEWS AGENT ---
     if (path === 'daily-news/fetch' && method === 'POST') {
+      const body = await request.json().catch(() => ({})) as any;
       const agent = new DailyNewsAgent(env, db);
-      const { jobId, work } = await agent.startFetchNews();
+      const { jobId, work } = await agent.startFetchNews(body);
       ctx.waitUntil(work); 
       return createResponse({ jobId, message: 'News fetch started' });
     }
@@ -23,18 +25,24 @@ export const handleAgents = async (request: Request, env: Env, db: DatabaseServi
     if (path === 'daily-news/generate-blog' && method === 'POST') {
       const body = await request.json().catch(() => ({})) as any;
       const agent = new DailyNewsAgent(env, db);
-      const { jobId, work } = await agent.startGenerateBlog(body.writerId);
+      const { jobId, work } = await agent.startGenerateBlog(body);
       ctx.waitUntil(work);
       return createResponse({ jobId, message: 'Blog generation started' });
     }
 
     // --- RESEARCH AGENT ---
+    if (path === 'research/suggest' && method === 'GET') {
+      const agent = new ResearchAgent(env, db);
+      const suggestions = await agent.generateResearchSuggestions();
+      return createResponse(suggestions);
+    }
+
     if (path === 'research/start' && method === 'POST') {
       const body = await request.json() as any;
       if (!body.prompt) return createErrorResponse("Prompt required", 400);
       
       const agent = new ResearchAgent(env, db);
-      const taskId = await agent.startResearch(body.prompt, body.writerId);
+      const taskId = await agent.startResearch(body.prompt, body.writerId, body.customInstructions);
       ctx.waitUntil(agent.executeResearch(taskId));
       return createResponse({ taskId, message: 'Research task started' });
     }
@@ -66,7 +74,15 @@ export const handleAgents = async (request: Request, env: Env, db: DatabaseServi
     if (path === 'feature-announcement/create' && method === 'POST') {
       const body = await request.json() as any;
       const agent = new FeatureAnnouncementAgent(env, db);
-      const id = await agent.createAnnouncement(body.featureName, body.description);
+      
+      // Updated to pass product name and custom instructions
+      const id = await agent.createAnnouncement(
+          body.productName, 
+          body.featureName, 
+          body.description,
+          body.customInstructions
+      );
+      
       ctx.waitUntil(agent.researchAndWrite(id, body.writerId));
       return createResponse({ id, message: 'Announcement creation started' });
     }
@@ -77,8 +93,8 @@ export const handleAgents = async (request: Request, env: Env, db: DatabaseServi
       // MOCK DATA INJECTION
       if (items.length === 0) {
           return createResponse([
-              { id: 1, feature_name: "Dark Mode 2.0", description: "Improved contrast and OLED support.", status: "processed", created_at: new Date().toISOString() },
-              { id: 2, feature_name: "Mobile App Beta", description: "iOS release for beta testers.", status: "draft", created_at: new Date(Date.now() - 86400000).toISOString() }
+              { id: 1, product_name: "Mobile App", feature_name: "Dark Mode 2.0", description: "Improved contrast.", status: "processed", created_at: new Date().toISOString() },
+              { id: 2, product_name: "Web Platform", feature_name: "Beta Dashboard", description: "New analytics view.", status: "draft", created_at: new Date(Date.now() - 86400000).toISOString() }
           ]);
       }
 

@@ -46,51 +46,82 @@ export const handleWriters = async (request: Request, db: DatabaseService) => {
 
   if (method === 'GET') {
     // List all
-    const writers = await db.query<Writer>('SELECT * FROM writers ORDER BY is_default DESC, created_at DESC');
+    let writers = await db.query<Writer>('SELECT * FROM writers ORDER BY is_default DESC, created_at DESC');
     
-    // MOCK DATA INJECTION
+    // LAZY SEEDING & FALLBACK
     if (writers.length === 0) {
-        const mockWriters = [
-            {
-                id: 1,
-                name: 'Sara Danish',
-                bio: 'Senior tech journalist with a focus on AI. Loves deep analysis and structured arguments.',
-                personality: { traits: ['Analytical', 'Formal', 'Precise'] },
-                style: { sentence_length: 'medium', vocabulary: 'technical' },
-                avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sara',
-                is_default: 1,
-                created_at: new Date().toISOString()
-            },
-            {
-                id: 2,
-                name: 'Ali Novin',
-                bio: 'Enthusiastic blogger covering startup news. Uses emojis and energetic language.',
-                personality: { traits: ['Energetic', 'Casual', 'Optimistic'] },
-                style: { sentence_length: 'short', vocabulary: 'engaging' },
-                avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ali',
-                is_default: 0,
-                created_at: new Date().toISOString()
-            },
-            {
-                id: 3,
-                name: 'Dr. Ramin Farhadi',
-                bio: 'Computer science professor and deep tech analyst. Very detailed and authoritative.',
-                personality: { traits: ['Academic', 'Deep', 'Thoughtful'] },
-                style: { sentence_length: 'long', vocabulary: 'sophisticated' },
-                avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ramin',
-                is_default: 0,
-                created_at: new Date().toISOString()
+        try {
+            const mockWriters = [
+                {
+                    name: 'Sara Danish',
+                    bio: 'Senior tech journalist with a focus on AI. Loves deep analysis and structured arguments.',
+                    personality: JSON.stringify({ traits: ['Analytical', 'Formal', 'Precise'] }),
+                    style: JSON.stringify({ sentence_length: 'medium', vocabulary: 'technical' }),
+                    avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sara',
+                    is_default: 1
+                },
+                {
+                    name: 'Ali Novin',
+                    bio: 'Enthusiastic blogger covering startup news. Uses emojis and energetic language.',
+                    personality: JSON.stringify({ traits: ['Energetic', 'Casual', 'Optimistic'] }),
+                    style: JSON.stringify({ sentence_length: 'short', vocabulary: 'engaging' }),
+                    avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ali',
+                    is_default: 0
+                },
+                {
+                    name: 'Dr. Ramin Farhadi',
+                    bio: 'Computer science professor and deep tech analyst. Very detailed and authoritative.',
+                    personality: JSON.stringify({ traits: ['Academic', 'Deep', 'Thoughtful'] }),
+                    style: JSON.stringify({ sentence_length: 'long', vocabulary: 'sophisticated' }),
+                    avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ramin',
+                    is_default: 0
+                }
+            ];
+
+            for (const w of mockWriters) {
+                await db.execute(
+                    `INSERT INTO writers (name, bio, personality, style, avatar_url, is_default, created_at) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+                    [w.name, w.bio, w.personality, w.style, w.avatar_url, w.is_default]
+                );
             }
-        ];
-        return createResponse(mockWriters);
+            
+            // Re-fetch to get IDs
+            writers = await db.query<Writer>('SELECT * FROM writers ORDER BY is_default DESC, created_at DESC');
+        } catch (e) {
+            console.error("Writer seeding failed", e);
+        }
+
+        // Ultimate Fallback
+        if (writers.length === 0) {
+            return createResponse([
+                {
+                    id: 991,
+                    name: 'Sara Danish (Fallback)',
+                    bio: 'Senior tech journalist.',
+                    personality: { traits: ['Analytical'] },
+                    style: { sentence_length: 'medium' },
+                    avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sara',
+                    is_default: 1
+                },
+                {
+                    id: 992,
+                    name: 'Ali Novin (Fallback)',
+                    bio: 'Tech Blogger.',
+                    personality: { traits: ['Energetic'] },
+                    style: { sentence_length: 'short' },
+                    avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ali',
+                    is_default: 0
+                }
+            ]);
+        }
     }
 
     const parsedWriters = writers.map(w => {
         try {
             return {
                 ...w,
-                personality: JSON.parse(w.personality),
-                style: JSON.parse(w.style)
+                personality: typeof w.personality === 'string' ? JSON.parse(w.personality) : w.personality,
+                style: typeof w.style === 'string' ? JSON.parse(w.style) : w.style
             };
         } catch(e) { return w; }
     });

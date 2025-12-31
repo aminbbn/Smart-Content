@@ -1,9 +1,69 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { AgentJob, Writer } from '../types';
 import JobProgress from './JobProgress';
 import AgentActivityLog from './AgentActivityLog';
 import WriterSelector from './WriterSelector';
+
+// --- Utility Components ---
+
+const ScrollObserver = ({ children, delay = 0, className = "" }: { children?: React.ReactNode, delay?: number, className?: string }) => {
+    const [visible, setVisible] = useState(false);
+    const ref = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const observer = new IntersectionObserver(([entry]) => {
+            if (entry.isIntersecting) {
+                setVisible(true);
+                observer.disconnect();
+            }
+        }, { threshold: 0.15, rootMargin: "50px" });
+        
+        if (ref.current) observer.observe(ref.current);
+        return () => observer.disconnect();
+    }, []);
+
+    return (
+        <div 
+            ref={ref} 
+            className={`transition-all duration-1000 cubic-bezier(0.2, 0.8, 0.2, 1) transform ${
+                visible ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-12 scale-[0.98]'
+            } ${className}`} 
+            style={{ transitionDelay: `${delay}ms` }}
+        >
+            {children}
+        </div>
+    );
+};
+
+const SegmentedControl = ({ options, value, onChange, disabled }: { options: string[], value: string, onChange: (val: any) => void, disabled?: boolean }) => {
+    return (
+        <div className="relative flex bg-slate-100 p-1.5 rounded-xl border border-slate-200/60 shadow-inner w-full">
+            {options.map((opt) => (
+                <button
+                    key={opt}
+                    onClick={() => !disabled && onChange(opt)}
+                    disabled={disabled}
+                    className={`flex-1 relative z-10 py-3 text-xs font-bold capitalize transition-colors duration-300 ${
+                        value === opt ? 'text-slate-800' : 'text-slate-400 hover:text-slate-600'
+                    } ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
+                >
+                    {opt}
+                </button>
+            ))}
+            {/* Sliding Pill Background */}
+            <div 
+                className="absolute top-1.5 bottom-1.5 bg-white rounded-lg shadow-sm border border-black/5 transition-all duration-300 cubic-bezier(0.4, 0, 0.2, 1)"
+                style={{ 
+                    left: `${(options.indexOf(value) * 100) / options.length + 1}%`, 
+                    width: `${98 / options.length}%` 
+                }}
+            />
+        </div>
+    );
+};
+
+// --- Main View ---
 
 export default function DailyNewsView() {
     const [loadingAction, setLoadingAction] = useState<'fetch' | 'generate-blog' | null>(null);
@@ -11,7 +71,15 @@ export default function DailyNewsView() {
     const [error, setError] = useState<string | null>(null);
     const [refreshTrigger, setRefreshTrigger] = useState(0);
     const [writers, setWriters] = useState<Writer[]>([]);
-    const [selectedWriter, setSelectedWriter] = useState<number | string>('');
+    
+    // Configuration State
+    const [config, setConfig] = useState({
+        writerId: '' as string | number,
+        newsCount: 5,
+        length: 'medium' as 'short' | 'medium' | 'long',
+        relation: 'medium' as 'low' | 'medium' | 'high',
+        customInstructions: ''
+    });
 
     useEffect(() => {
         fetchWriters();
@@ -24,192 +92,268 @@ export default function DailyNewsView() {
             if (json.success) {
                 setWriters(json.data);
                 const def = json.data.find((w: Writer) => w.is_default);
-                if (def) setSelectedWriter(def.id);
+                if (def) setConfig(prev => ({ ...prev, writerId: def.id }));
             }
         } catch (e) { console.error(e); }
     };
 
-    const triggerAction = async (action: 'fetch' | 'generate-blog') => {
+    const triggerAgent = async () => {
         if (loadingAction || activeJobId) return;
-        
-        setLoadingAction(action);
+        setLoadingAction('fetch');
         setError(null);
         
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 8000); 
-
         try {
-            const body = action === 'generate-blog' ? { writerId: selectedWriter ? Number(selectedWriter) : undefined } : {};
-
-            const res = await fetch(`/api/agents/daily-news/${action}`, { 
+            const fetchRes = await fetch(`/api/agents/daily-news/fetch`, { 
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(body),
-                signal: controller.signal
+                body: JSON.stringify({ newsCount: config.newsCount })
             });
             
-            clearTimeout(timeoutId);
-
-            if (!res.ok) {
-                const text = await res.text();
-                throw new Error(`Server Error (${res.status}): ${text.substring(0, 100)}`);
-            }
-
-            const json = await res.json();
+            if (!fetchRes.ok) throw new Error("Failed to fetch news");
+            const fetchJson = await fetchRes.json();
             
-            if (!json.success) {
-                throw new Error(json.error || json.message || "Operation failed");
-            }
-
-            if (json.data?.jobId) {
-                setActiveJobId(json.data.jobId);
+            if (fetchJson.data?.jobId) {
+                setActiveJobId(fetchJson.data.jobId);
                 setRefreshTrigger(prev => prev + 1);
-            } else {
-                throw new Error("No Job ID returned from server");
             }
-
         } catch (e: any) { 
             console.error("Action failed:", e);
-            if (e.name === 'AbortError') {
-                setError("Timeout: Server took too long to respond.");
-            } else {
-                setError(e.message || "Connection failed");
-            }
-        } finally {
+            setError(e.message || "Connection failed");
             setLoadingAction(null);
         }
     };
 
+    const triggerGeneration = async () => {
+        if (loadingAction || activeJobId) return;
+        setLoadingAction('generate-blog');
+        setError(null);
+
+        try {
+            const res = await fetch(`/api/agents/daily-news/generate-blog`, { 
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(config)
+            });
+
+            if (!res.ok) throw new Error("Failed to start generation");
+            const json = await res.json();
+            
+            if (json.data?.jobId) {
+                setActiveJobId(json.data.jobId);
+                setRefreshTrigger(prev => prev + 1);
+            }
+        } catch (e: any) {
+            setError(e.message);
+            setLoadingAction(null);
+        }
+    }
+
     return (
-        <div className="space-y-8 animate-page-enter w-full">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <div>
-                    <h2 className="text-2xl font-extrabold text-slate-800 mb-2 tracking-tight">Daily News Agent</h2>
-                    <p className="text-slate-500 font-medium">Automatic news gathering and daily blog generation</p>
+        <div className="w-full space-y-12 pb-20">
+            {/* Header */}
+            <ScrollObserver>
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 border-b border-slate-200/60 pb-8">
+                    <div className="space-y-2">
+                        <div className="flex items-center gap-3">
+                            <span className="w-2 h-8 bg-blue-600 rounded-full"></span>
+                            <h2 className="text-4xl font-extrabold text-slate-800 tracking-tight">Daily News Agent</h2>
+                        </div>
+                        <p className="text-slate-500 text-lg font-medium pl-5 max-w-2xl">
+                            Automatically scan global sources, analyze trends, and generate comprehensive blog posts for your audience.
+                        </p>
+                    </div>
                 </div>
-                {(activeJobId || loadingAction) && (
-                    <div className="bg-blue-50 text-blue-700 px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 animate-pulse border border-blue-200 shadow-sm">
-                        <span className="w-2.5 h-2.5 bg-blue-600 rounded-full shadow-glow"></span>
-                        {loadingAction ? 'Sending request...' : 'Agent is active...'}
+            </ScrollObserver>
+
+            {/* SECTION 1: Agent Configuration (Full Width) */}
+            <ScrollObserver delay={100}>
+                <div className="bg-white rounded-[2.5rem] shadow-xl shadow-slate-200/50 border border-slate-100 p-8 md:p-10 relative overflow-hidden group">
+                    {/* Decorative Top Border */}
+                    <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-blue-500 via-indigo-500 to-blue-600 opacity-80"></div>
+                    
+                    <div className="flex items-center gap-4 mb-8">
+                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 text-blue-600 flex items-center justify-center shadow-sm border border-white">
+                            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" /></svg>
+                        </div>
+                        <div>
+                            <h3 className="font-bold text-xl text-slate-800 leading-tight">Agent Configuration</h3>
+                            <p className="text-xs text-slate-400 font-bold tracking-wider uppercase mt-0.5">Customize Output</p>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                        {/* Left Side Inputs */}
+                        <div className="space-y-8">
+                            {/* Writer Selection */}
+                            <div className="space-y-3">
+                                <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest ml-1">Select Persona</label>
+                                <div className="relative group/writer">
+                                    <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-200 to-indigo-200 rounded-xl opacity-0 group-hover/writer:opacity-100 transition duration-500 blur"></div>
+                                    <div className="relative bg-white rounded-xl">
+                                        <WriterSelector 
+                                            writers={writers} 
+                                            selectedId={config.writerId}
+                                            onChange={(id) => setConfig({...config, writerId: id})}
+                                            disabled={activeJobId !== null}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* News Volume Slider */}
+                            <div className="space-y-4">
+                                <div className="flex justify-between items-center">
+                                    <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest ml-1">Scan Volume</label>
+                                    <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-md border border-blue-100">
+                                        {config.newsCount} Articles
+                                    </span>
+                                </div>
+                                <div className="relative h-3 bg-slate-100 rounded-full overflow-hidden">
+                                    <div className="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-400 to-indigo-500 transition-all duration-300" style={{ width: `${(config.newsCount / 20) * 100}%` }}></div>
+                                    <input 
+                                        type="range" 
+                                        min="1" max="20" 
+                                        value={config.newsCount}
+                                        onChange={(e) => setConfig({...config, newsCount: parseInt(e.target.value)})}
+                                        disabled={activeJobId !== null}
+                                        className="absolute top-0 left-0 w-full h-full opacity-0 cursor-pointer"
+                                    />
+                                </div>
+                                <div className="flex justify-between text-[10px] text-slate-300 font-bold font-mono">
+                                    <span>1</span>
+                                    <span>10</span>
+                                    <span>20</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Right Side Inputs */}
+                        <div className="space-y-8">
+                            {/* Length & Relation */}
+                            <div className="grid grid-cols-2 gap-6">
+                                <div className="space-y-3">
+                                    <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest ml-1">Length</label>
+                                    <SegmentedControl 
+                                        options={['short', 'medium', 'long']} 
+                                        value={config.length} 
+                                        onChange={(val) => setConfig({...config, length: val})} 
+                                        disabled={activeJobId !== null}
+                                    />
+                                </div>
+                                <div className="space-y-3">
+                                    <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest ml-1">Brand Relation</label>
+                                    <SegmentedControl 
+                                        options={['low', 'medium', 'high']} 
+                                        value={config.relation} 
+                                        onChange={(val) => setConfig({...config, relation: val})} 
+                                        disabled={activeJobId !== null}
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Custom Instructions */}
+                            <div className="space-y-3">
+                                <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest ml-1">Extra Instructions</label>
+                                <textarea
+                                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 text-sm font-medium text-slate-700 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none resize-none h-28 placeholder-slate-400 leading-relaxed shadow-inner"
+                                    placeholder="Specific topics to focus on, forbidden words, or specific formatting requirements..."
+                                    value={config.customInstructions}
+                                    onChange={(e) => setConfig({...config, customInstructions: e.target.value})}
+                                    disabled={activeJobId !== null}
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Action Bar */}
+                    <div className="mt-10 pt-8 border-t border-slate-100 flex flex-col sm:flex-row gap-4">
+                        <button
+                            onClick={triggerAgent}
+                            disabled={activeJobId !== null || loadingAction !== null}
+                            className="flex-1 relative overflow-hidden group bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-base py-4 shadow-xl shadow-slate-900/10 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-shimmer"></div>
+                            <div className="flex items-center justify-center gap-3">
+                                {loadingAction === 'fetch' ? (
+                                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                ) : (
+                                    <svg className="w-5 h-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" /></svg>
+                                )}
+                                <span>{loadingAction === 'fetch' ? 'Scanning Global News...' : 'Phase 1: Fetch News'}</span>
+                            </div>
+                        </button>
+                        
+                        <button
+                            onClick={triggerGeneration}
+                            disabled={activeJobId !== null || loadingAction !== null}
+                            className="flex-1 py-4 bg-white border border-slate-200 text-slate-700 hover:text-blue-700 hover:border-blue-200 hover:bg-blue-50/50 rounded-xl font-bold text-base transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 group shadow-sm"
+                        >
+                            {loadingAction === 'generate-blog' ? (
+                                <div className="w-5 h-5 border-2 border-blue-500/30 border-t-blue-600 rounded-full animate-spin"></div>
+                            ) : (
+                                <svg className="w-5 h-5 text-slate-400 group-hover:text-blue-600 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                            )}
+                            <span>{loadingAction === 'generate-blog' ? 'Writing Article...' : 'Phase 2: Generate Blog'}</span>
+                        </button>
+                    </div>
+                </div>
+            </ScrollObserver>
+
+            {/* SECTION 2: Status & Errors (Only visible if active or error) */}
+            <div className="space-y-6">
+                {error && (
+                    <ScrollObserver>
+                        <div className="bg-red-50/80 backdrop-blur border border-red-200 text-red-800 px-6 py-4 rounded-2xl flex items-start justify-between shadow-lg shadow-red-500/5">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-red-100 rounded-lg">
+                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                </div>
+                                <span className="font-bold text-sm">{error}</span>
+                            </div>
+                            <button onClick={() => setError(null)} className="p-1 hover:bg-red-100 rounded-lg transition-colors">✕</button>
+                        </div>
+                    </ScrollObserver>
+                )}
+
+                {activeJobId && (
+                    <div className="animate-scale-in">
+                        <JobProgress 
+                            jobId={activeJobId} 
+                            onComplete={() => {
+                                setActiveJobId(null);
+                                setLoadingAction(null);
+                            }}
+                            onCancel={() => {
+                                setActiveJobId(null);
+                                setLoadingAction(null);
+                            }}
+                        />
                     </div>
                 )}
             </div>
 
-            {error && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-6 py-4 rounded-2xl flex items-start justify-between animate-slide-in shadow-sm">
-                    <div className="flex items-start gap-3">
-                        <div className="bg-red-100 p-2 rounded-full">
-                            <svg className="w-5 h-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            {/* SECTION 3: Live Logs (Full Width) */}
+            <ScrollObserver delay={300}>
+                <div className="bg-white rounded-[2.5rem] shadow-xl shadow-slate-200/40 border border-slate-100 p-8 mb-8">
+                    <div className="flex justify-between items-center mb-6">
+                        <div className="flex items-center gap-3">
+                            <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)] animate-pulse"></div>
+                            <h3 className="font-bold text-lg text-slate-800">Live Agent Activity</h3>
                         </div>
-                        <div>
-                            <span className="font-bold block mb-1">Execution Error</span>
-                            <span className="text-sm opacity-90">{error}</span>
-                        </div>
+                        <span className="text-[10px] font-bold text-slate-400 bg-slate-50 px-2 py-1 rounded border border-slate-100 font-mono">
+                            TERM.LOG
+                        </span>
                     </div>
-                    <button onClick={() => setError(null)} className="text-red-500 hover:text-red-800 p-2 hover:bg-red-100 rounded-lg transition-colors">✕</button>
-                </div>
-            )}
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {/* Search Card */}
-                <button 
-                    onClick={() => triggerAction('fetch')}
-                    disabled={loadingAction !== null || activeJobId !== null}
-                    className={`relative p-8 rounded-3xl shadow-card transition-all duration-300 group text-left border flex flex-col h-full ${
-                        (loadingAction || activeJobId) 
-                        ? 'opacity-60 cursor-not-allowed bg-slate-50 border-slate-200' 
-                        : 'bg-white border-slate-100 hover:border-blue-300 hover:shadow-card-hover hover:-translate-y-1'
-                    }`}
-                >
-                    {/* Decoration Container */}
-                    <div className="absolute inset-0 rounded-3xl overflow-hidden pointer-events-none">
-                         <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-bl-full -mr-10 -mt-10 transition-transform group-hover:scale-110"></div>
-                    </div>
-                    
-                    <div className="relative z-10 flex flex-col h-full w-full">
-                        <div className="flex justify-between items-start mb-6">
-                            <div className="p-4 bg-blue-100 rounded-2xl text-blue-600 shadow-sm group-hover:bg-blue-600 group-hover:text-white transition-colors duration-300">
-                                <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" /></svg>
-                            </div>
-                            {loadingAction === 'fetch' && <span className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></span>}
-                        </div>
-                        
-                        <h3 className="text-2xl font-bold text-slate-800 mb-3 group-hover:text-blue-700 transition-colors">
-                            {loadingAction === 'fetch' ? 'Connecting...' : 'Fetch New News'}
-                        </h3>
-                        <p className="text-slate-500 leading-relaxed text-sm mb-6 flex-grow">
-                            Search Google, extract headlines, and store industry-relevant news in the database.
-                        </p>
-                        
-                        <div className="flex items-center text-blue-600 font-bold text-sm opacity-0 transform translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
-                            Start Process
-                            <svg className="w-4 h-4 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l7-7m0 0l-7-7m7 7H3" /></svg>
-                        </div>
-                    </div>
-                </button>
-
-                {/* Generate Blog Card */}
-                <div 
-                    className={`relative p-8 rounded-3xl shadow-card transition-all duration-300 border bg-white border-slate-100 hover:border-emerald-300 hover:shadow-card-hover group`}
-                >
-                     <div className="absolute inset-0 rounded-3xl overflow-hidden pointer-events-none">
-                         <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-50 rounded-bl-full -mr-10 -mt-10 transition-transform group-hover:scale-110 pointer-events-none"></div>
-                     </div>
-
-                    <div className="relative z-10 flex flex-col h-full">
-                        <div className="flex justify-between items-start mb-6">
-                            <div className="p-4 bg-emerald-100 rounded-2xl text-emerald-600 shadow-sm group-hover:bg-emerald-600 group-hover:text-white transition-colors duration-300">
-                                <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                            </div>
-                            {loadingAction === 'generate-blog' && <span className="w-6 h-6 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></span>}
-                        </div>
-                        <h3 className="text-2xl font-bold text-slate-800 mb-3 group-hover:text-emerald-700 transition-colors">
-                            {loadingAction === 'generate-blog' ? 'Requesting...' : 'Generate Daily Blog'}
-                        </h3>
-                        <p className="text-slate-500 leading-relaxed text-sm mb-4">
-                            Analyze gathered news, select suitable writer, and draft a complete article.
-                        </p>
-
-                        <div className="mt-auto mb-4" onClick={(e) => e.stopPropagation()}>
-                            <label className="block text-xs font-bold text-slate-500 mb-1">Select Writer</label>
-                            <WriterSelector 
-                                writers={writers}
-                                selectedId={selectedWriter}
-                                onChange={setSelectedWriter}
-                                disabled={loadingAction !== null || activeJobId !== null}
-                            />
-                        </div>
-
-                        <button
-                            onClick={() => triggerAction('generate-blog')}
-                            disabled={loadingAction !== null || activeJobId !== null}
-                            className="flex items-center justify-center w-full py-3 bg-emerald-50 hover:bg-emerald-500 text-emerald-600 hover:text-white rounded-xl font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            Start Generation Process
-                            <svg className="w-4 h-4 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l7-7m0 0l-7-7m7 7H3" /></svg>
-                        </button>
+                    <div className="bg-slate-50 rounded-2xl border border-slate-100/50 p-1">
+                        <AgentActivityLog 
+                            limit={5} 
+                            refreshInterval={3000} 
+                            typeFilter="researcher" 
+                            refreshTrigger={refreshTrigger}
+                        />
                     </div>
                 </div>
-            </div>
-
-            {activeJobId && (
-                <div className="animate-slide-in">
-                    <JobProgress 
-                        jobId={activeJobId} 
-                        onComplete={() => setActiveJobId(null)}
-                        onCancel={() => setActiveJobId(null)}
-                    />
-                </div>
-            )}
-
-            <div className="pt-8 border-t border-slate-200">
-                <AgentActivityLog 
-                    limit={10} 
-                    refreshInterval={3000} 
-                    typeFilter="researcher" 
-                    refreshTrigger={refreshTrigger}
-                />
-            </div>
+            </ScrollObserver>
         </div>
     );
 }

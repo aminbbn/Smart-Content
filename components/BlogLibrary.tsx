@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Blog } from '../types';
 import { formatDate } from '../utils/helpers';
@@ -9,6 +8,13 @@ export default function BlogLibrary() {
     const [loading, setLoading] = useState(false);
     const [selectedBlog, setSelectedBlog] = useState<Blog | null>(null);
     const [filter, setFilter] = useState('all');
+
+    // Scheduling State
+    const [isScheduleOpen, setIsScheduleOpen] = useState(false);
+    const [scheduleTarget, setScheduleTarget] = useState<Blog | null>(null);
+    const [scheduleDate, setScheduleDate] = useState('');
+    const [scheduleTime, setScheduleTime] = useState('09:00');
+    const [scheduling, setScheduling] = useState(false);
 
     useEffect(() => {
         fetchBlogs();
@@ -26,11 +32,42 @@ export default function BlogLibrary() {
 
     const handlePublish = async (id: number, e: React.MouseEvent) => {
         e.stopPropagation();
-        if(!confirm('Are you sure you want to publish this article?')) return;
+        if(!confirm('Are you sure you want to publish this article immediately?')) return;
         try {
             await fetch(`/api/blogs/${id}/publish`, { method: 'POST' });
             fetchBlogs();
         } catch(e) { console.error(e); }
+    };
+
+    const openScheduleModal = (blog: Blog, e: React.MouseEvent) => {
+        e.stopPropagation();
+        setScheduleTarget(blog);
+        // Default to tomorrow
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        setScheduleDate(tomorrow.toISOString().split('T')[0]);
+        setIsScheduleOpen(true);
+    };
+
+    const submitSchedule = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!scheduleTarget || !scheduleDate) return;
+
+        setScheduling(true);
+        try {
+            const dateTime = new Date(`${scheduleDate}T${scheduleTime}`);
+            await fetch('/api/calendar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    blog_id: scheduleTarget.id,
+                    scheduled_date: dateTime.toISOString()
+                })
+            });
+            setIsScheduleOpen(false);
+            fetchBlogs();
+        } catch(e) { console.error(e); }
+        setScheduling(false);
     };
 
     const handleSave = () => {
@@ -44,7 +81,7 @@ export default function BlogLibrary() {
     }
 
     return (
-        <div className="space-y-8 animate-page-enter">
+        <div className="space-y-8 animate-page-enter relative">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
                     <h2 className="text-2xl font-bold text-slate-800 mb-2">Content Library</h2>
@@ -93,9 +130,9 @@ export default function BlogLibrary() {
                                     <span className={`px-3 py-1 rounded-full text-xs font-bold shadow-sm ${
                                         blog.status === 'published' ? 'bg-green-100 text-green-700' :
                                         blog.status === 'draft' ? 'bg-amber-100 text-amber-700' :
-                                        'bg-slate-100 text-slate-600'
+                                        'bg-blue-100 text-blue-700'
                                     }`}>
-                                        {blog.status === 'published' ? 'Published' : 'Draft'}
+                                        {blog.status === 'published' ? 'Published' : blog.status === 'draft' ? 'Draft' : 'Scheduled'}
                                     </span>
                                 </div>
                                 <div className="absolute -bottom-6 left-6">
@@ -120,13 +157,22 @@ export default function BlogLibrary() {
                                         {blog.views} Views
                                     </div>
                                     <div className="flex gap-2">
-                                        {blog.status !== 'published' && (
-                                            <button 
-                                                onClick={(e) => handlePublish(blog.id, e)}
-                                                className="px-3 py-1.5 text-xs font-bold text-green-600 bg-green-50 rounded-lg hover:bg-green-100 transition-colors"
-                                            >
-                                                Publish
-                                            </button>
+                                        {blog.status === 'draft' && (
+                                            <>
+                                                <button 
+                                                    onClick={(e) => handlePublish(blog.id, e)}
+                                                    className="px-3 py-1.5 text-xs font-bold text-green-600 bg-green-50 rounded-lg hover:bg-green-100 transition-colors"
+                                                >
+                                                    Publish
+                                                </button>
+                                                <button 
+                                                    onClick={(e) => openScheduleModal(blog, e)}
+                                                    className="px-3 py-1.5 text-xs font-bold text-amber-600 bg-amber-50 rounded-lg hover:bg-amber-100 transition-colors"
+                                                    title="Schedule"
+                                                >
+                                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                                                </button>
+                                            </>
                                         )}
                                         <button className="px-3 py-1.5 text-xs font-bold text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
                                             Edit
@@ -136,6 +182,48 @@ export default function BlogLibrary() {
                             </div>
                         </div>
                     ))}
+                </div>
+            )}
+
+            {/* Schedule Modal */}
+            {isScheduleOpen && scheduleTarget && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-fade-in">
+                    <div className="bg-white rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl animate-scale-in">
+                        <div className="p-5 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+                            <h3 className="font-bold text-lg text-slate-800">Schedule Article</h3>
+                            <button onClick={() => setIsScheduleOpen(false)} className="text-slate-400 hover:text-slate-600">✕</button>
+                        </div>
+                        <form onSubmit={submitSchedule} className="p-6 space-y-4">
+                            <div>
+                                <p className="text-sm font-bold text-slate-800 mb-4 line-clamp-1">"{scheduleTarget.title}"</p>
+                                <label className="block text-xs font-bold text-slate-500 mb-1">Date</label>
+                                <input 
+                                    type="date" 
+                                    required
+                                    className="w-full px-4 py-2 rounded-xl border-2 border-slate-200 focus:border-blue-500 outline-none text-sm font-medium"
+                                    value={scheduleDate}
+                                    onChange={e => setScheduleDate(e.target.value)}
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-slate-500 mb-1">Time</label>
+                                <input 
+                                    type="time" 
+                                    required
+                                    className="w-full px-4 py-2 rounded-xl border-2 border-slate-200 focus:border-blue-500 outline-none text-sm font-medium"
+                                    value={scheduleTime}
+                                    onChange={e => setScheduleTime(e.target.value)}
+                                />
+                            </div>
+                            <button 
+                                type="submit"
+                                disabled={scheduling}
+                                className="w-full py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-colors shadow-lg shadow-blue-200 disabled:opacity-50"
+                            >
+                                {scheduling ? 'Scheduling...' : 'Confirm Schedule'}
+                            </button>
+                        </form>
+                    </div>
                 </div>
             )}
         </div>

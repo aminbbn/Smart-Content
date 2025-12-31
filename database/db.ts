@@ -1,3 +1,4 @@
+
 import Database from 'better-sqlite3';
 import { logger } from '../utils/logger';
 
@@ -75,8 +76,10 @@ try {
 
     CREATE TABLE IF NOT EXISTS feature_announcements (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      product_name TEXT,
       feature_name TEXT,
       description TEXT,
+      custom_instructions TEXT,
       status TEXT,
       created_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
@@ -120,6 +123,67 @@ try {
   try { db.exec("ALTER TABLE company_settings ADD COLUMN description TEXT"); } catch (e) {}
   try { db.exec("ALTER TABLE company_settings ADD COLUMN core_values TEXT"); } catch (e) {}
   try { db.exec("ALTER TABLE writers ADD COLUMN is_default INTEGER DEFAULT 0"); } catch (e) {}
+  
+  // Migrations for feature_announcements
+  try { db.exec("ALTER TABLE feature_announcements ADD COLUMN product_name TEXT"); } catch (e) {}
+  try { db.exec("ALTER TABLE feature_announcements ADD COLUMN custom_instructions TEXT"); } catch (e) {}
+
+  // --- AUTO SEEDING ---
+  const writerCount = db.prepare('SELECT count(*) as count FROM writers').get() as { count: number };
+  if (writerCount.count === 0) {
+      const writers = [
+        {
+            name: 'Sara Danish',
+            bio: 'Senior tech journalist with a focus on AI.',
+            personality: JSON.stringify({ traits: ['Analytical', 'Formal', 'Precise'] }),
+            style: JSON.stringify({ sentence_length: 'medium', vocabulary: 'technical' }),
+            avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sara'
+        },
+        {
+            name: 'Ali Novin',
+            bio: 'Enthusiastic blogger covering startup news.',
+            personality: JSON.stringify({ traits: ['Energetic', 'Casual', 'Optimistic'] }),
+            style: JSON.stringify({ sentence_length: 'short', vocabulary: 'engaging' }),
+            avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ali'
+        },
+        {
+            name: 'Dr. Ramin Farhadi',
+            bio: 'Computer science professor and deep tech analyst.',
+            personality: JSON.stringify({ traits: ['Academic', 'Deep', 'Thoughtful'] }),
+            style: JSON.stringify({ sentence_length: 'long', vocabulary: 'sophisticated' }),
+            avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ramin'
+        }
+      ];
+
+      const insertWriter = db.prepare(`INSERT INTO writers (name, bio, personality, style, avatar_url, created_at) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`);
+      writers.forEach(w => insertWriter.run(w.name, w.bio, w.personality, w.style, w.avatar_url));
+      logger.info('Seeded writers');
+  }
+
+  const blogCount = db.prepare('SELECT count(*) as count FROM blogs').get() as { count: number };
+  if (blogCount.count === 0) {
+      const sampleBlogs = [
+          { title: "The Rise of Generative AI", content: "Content...", writer_id: 1, status: 'published', views: 1540 },
+          { title: "Top 10 Marketing Trends", content: "Content...", writer_id: 2, status: 'draft', views: 0 },
+          { title: "Introduction to Quantum Computing", content: "Content...", writer_id: 3, status: 'published', views: 890 },
+          { title: "Web Assembly: The Future?", content: "Content...", writer_id: 1, status: 'scheduled', views: 0 },
+          { title: "Sustainable Tech: Green Computing", content: "Content...", writer_id: 1, status: 'draft', views: 0 },
+          { title: "Microservices vs Monolith Architecture", content: "Content...", writer_id: 3, status: 'draft', views: 0 },
+          { title: "The Psychology of Color in UI Design", content: "Content...", writer_id: 2, status: 'draft', views: 0 },
+          { title: "Cybersecurity Best Practices 2025", content: "Content...", writer_id: 3, status: 'draft', views: 0 },
+          { title: "Remote Work Culture: A Guide", content: "Content...", writer_id: 1, status: 'draft', views: 0 },
+          { title: "Getting Started with Rust", content: "Content...", writer_id: 3, status: 'draft', views: 0 },
+          { title: "AI in Healthcare: Opportunities & Risks", content: "Content...", writer_id: 1, status: 'draft', views: 0 },
+          { title: "Effective Email Marketing Strategies", content: "Content...", writer_id: 2, status: 'draft', views: 0 }
+      ];
+
+      const insertBlog = db.prepare(`INSERT INTO blogs (title, slug, content, writer_id, status, views, created_at) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`);
+      sampleBlogs.forEach(blog => {
+          const slug = blog.title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+          insertBlog.run(blog.title, slug, blog.content, blog.writer_id, blog.status, blog.views);
+      });
+      logger.info('Seeded blogs');
+  }
 
 } catch (error) {
   logger.error('Failed to initialize database schema', { error });

@@ -1,8 +1,21 @@
+
 import { Env, CompanySettings, AgentSettings, Writer, NewsArticle } from '../../types';
 import { DatabaseService } from '../../database/db';
 import { GeminiService } from '../services/gemini-service';
 import { AgentOrchestrator } from './orchestrator';
 import { createSlug } from '../../utils/helpers';
+
+interface GenerateOptions {
+    writerId?: number;
+    newsCount?: number;
+    length?: 'short' | 'medium' | 'long';
+    relation?: 'low' | 'medium' | 'high';
+    customInstructions?: string;
+}
+
+interface FetchOptions {
+    newsCount?: number;
+}
 
 export class DailyNewsAgent {
   private gemini: GeminiService;
@@ -13,37 +26,48 @@ export class DailyNewsAgent {
     this.orchestrator = new AgentOrchestrator(db);
   }
 
-  async startFetchNews(): Promise<{ jobId: number, work: Promise<void> }> {
+  async startFetchNews(options?: FetchOptions): Promise<{ jobId: number, work: Promise<void> }> {
     const jobId = await this.orchestrator.startJob('researcher');
     
     const work = async () => {
       try {
-        await this.orchestrator.updateProgress(jobId, 10, "آماده‌سازی برای جستجوی اخبار...");
+        await this.orchestrator.updateProgress(jobId, 10, "Initializing company profile analysis...");
         
         const companySettings = await this.db.queryOne<CompanySettings>('SELECT * FROM company_settings WHERE id = 1');
-        const industry = companySettings?.industry || "Technology and AI";
         
-        await this.orchestrator.log(jobId, `Target Industry: ${industry}`);
-        await this.orchestrator.updateProgress(jobId, 30, `جستجو در گوگل برای: ${industry}`);
+        // Smart Query Construction
+        let query = "";
+        let industry = companySettings?.industry || "Technology";
+        let products = [];
         
-        const articles = await this.gemini.searchNews(`latest important news stories about ${industry}`);
+        try {
+            products = companySettings?.product_info ? JSON.parse(companySettings.product_info) : [];
+        } catch(e) {}
+
+        if (products.length > 0) {
+            const productKeywords = products.map((p: any) => p.name).join(' OR ');
+            query = `latest news about ${industry} AND (${productKeywords})`;
+        } else {
+            query = `latest important trends and news in ${industry} industry`;
+        }
+        
+        await this.orchestrator.log(jobId, `Context: ${industry}`);
+        await this.orchestrator.log(jobId, `Generated Query: ${query}`);
+        
+        await this.orchestrator.updateProgress(jobId, 30, `Scanning global sources for: ${industry}`);
+        
+        // Use options.newsCount if available, default to 5, max 10 for fetch
+        const articles = await this.gemini.searchNews(query);
         
         if (articles.length === 0) {
-            const msg = "نتیجه‌ای در جستجو یافت نشد (ممکن است مشکل از API Key یا مدل باشد)";
+            const msg = "No relevant news found. Check industry settings or try again later.";
             await this.orchestrator.log(jobId, msg);
             await this.orchestrator.completeJob(jobId, 'failed', msg);
-            await this.orchestrator.createNotification({
-                type: 'warning',
-                category: 'news',
-                title: 'خبری یافت نشد',
-                message: msg,
-                related_job_id: jobId
-            });
             return;
         }
 
-        await this.orchestrator.log(jobId, `Found ${articles.length} potential articles.`);
-        await this.orchestrator.updateProgress(jobId, 60, "پردازش و ذخیره نتایج...");
+        await this.orchestrator.log(jobId, `Analyzed ${articles.length} sources.`);
+        await this.orchestrator.updateProgress(jobId, 60, "Processing and filtering results...");
         
         let newCount = 0;
         for (const article of articles) {
@@ -58,155 +82,146 @@ export class DailyNewsAgent {
             );
             newCount++;
             await this.orchestrator.log(jobId, `Saved: ${article.title}`);
-          } else {
-             await this.orchestrator.log(jobId, `Skipped duplicate: ${article.title}`);
           }
         }
 
-        await this.orchestrator.updateProgress(jobId, 100, "تکمیل شد");
-        await this.orchestrator.log(jobId, `Operation complete. ${newCount} new articles added.`);
-        await this.orchestrator.completeJob(jobId, 'success', `با موفقیت ${newCount} خبر جدید یافت شد.`);
-
-        await this.orchestrator.createNotification({
-            type: 'success',
-            category: 'news',
-            title: 'دریافت اخبار تکمیل شد',
-            message: `${newCount} خبر جدید به سیستم اضافه شد.`,
-            related_job_id: jobId
-        });
+        await this.orchestrator.updateProgress(jobId, 100, "Fetch complete");
+        await this.orchestrator.log(jobId, `Operation complete. ${newCount} new articles archived.`);
+        await this.orchestrator.completeJob(jobId, 'success', `Found ${newCount} new articles matching your profile.`);
 
       } catch (error: any) {
-        const errorMsg = error.message || "خطای ناشناخته";
-        await this.orchestrator.log(jobId, `CRITICAL ERROR: ${errorMsg}`);
-        await this.orchestrator.completeJob(jobId, 'failed', `خطا: ${errorMsg.substring(0, 50)}...`);
-        await this.orchestrator.createNotification({
-            type: 'error',
-            category: 'news',
-            title: 'خطا در دریافت اخبار',
-            message: errorMsg,
-            related_job_id: jobId
-        });
+        const errorMsg = error.message || "Unknown error";
+        await this.orchestrator.log(jobId, `CRITICAL: ${errorMsg}`);
+        await this.orchestrator.completeJob(jobId, 'failed', errorMsg);
       }
     };
 
     return { jobId, work: work() };
   }
 
-  async startGenerateBlog(writerId?: number): Promise<{ jobId: number, work: Promise<void> }> {
+  async startGenerateBlog(options: GenerateOptions = {}): Promise<{ jobId: number, work: Promise<void> }> {
     const jobId = await this.orchestrator.startJob('writer');
     
     const work = async () => {
       try {
-        await this.orchestrator.updateProgress(jobId, 10, "بررسی اخبار موجود...");
-        await this.orchestrator.log(jobId, "Starting daily blog generation...");
-
-        const company = await this.db.queryOne<CompanySettings>('SELECT * FROM company_settings WHERE id = 1');
-        const articles = await this.db.query<NewsArticle>('SELECT * FROM news_articles WHERE status = "new" ORDER BY published_at DESC LIMIT 5');
+        await this.orchestrator.updateProgress(jobId, 10, "Analyzing content database...");
+        
+        const limit = options.newsCount || 5;
+        const articles = await this.db.query<NewsArticle>(`SELECT * FROM news_articles WHERE status = "new" ORDER BY published_at DESC LIMIT ?`, [limit]);
         
         if (articles.length < 1) {
-          const msg = "تعداد اخبار جدید کافی نیست (حداقل ۱ خبر لازم است)";
-          await this.orchestrator.log(jobId, msg);
-          await this.orchestrator.completeJob(jobId, 'failed', msg);
-          await this.orchestrator.createNotification({
-            type: 'warning',
-            category: 'blog',
-            title: 'تولید بلاگ متوقف شد',
-            message: msg,
-            related_job_id: jobId
-          });
-          return;
+            // Fallback to processed articles if no new ones
+            await this.orchestrator.log(jobId, "No 'new' articles found, using recent history...");
+            const recentArticles = await this.db.query<NewsArticle>(`SELECT * FROM news_articles ORDER BY published_at DESC LIMIT ?`, [limit]);
+            if (recentArticles.length < 1) {
+                const msg = "Insufficient data to generate blog.";
+                await this.orchestrator.completeJob(jobId, 'failed', msg);
+                return;
+            }
+            articles.push(...recentArticles);
         }
 
-        await this.orchestrator.updateProgress(jobId, 30, "انتخاب نویسنده هوشمند...");
+        await this.orchestrator.updateProgress(jobId, 30, "Assigning writer persona...");
         
         let writer: Writer | undefined;
-        if (writerId) {
-             writer = await this.db.queryOne<Writer>('SELECT * FROM writers WHERE id = ?', [writerId]);
+        if (options.writerId) {
+             writer = await this.db.queryOne<Writer>('SELECT * FROM writers WHERE id = ?', [options.writerId]);
         } 
-        
+        if (!writer) writer = await this.db.queryOne<Writer>('SELECT * FROM writers WHERE is_default = 1');
         if (!writer) {
-            // Try default
-            writer = await this.db.queryOne<Writer>('SELECT * FROM writers WHERE is_default = 1');
-        }
-        
-        if (!writer) {
-             // Fallback to first
              const writers = await this.db.query<Writer>('SELECT * FROM writers LIMIT 1');
              writer = writers[0];
         }
-
+        
+        // Writer Fallback
         if (!writer) {
-            writer = { name: 'AI Assistant', bio: 'Generic AI', personality: '{}', style: '{}', id: 0, is_default: 0, created_at: '' };
+             writer = { name: 'AI Editor', bio: 'Professional editor', personality: 'Neutral', style: 'Standard', id: 0, is_default: 0, created_at: '' };
         }
 
-        await this.orchestrator.log(jobId, `Selected writer: ${writer.name}`);
+        await this.orchestrator.log(jobId, `Writer assigned: ${writer.name}`);
 
-        await this.orchestrator.updateProgress(jobId, 50, "در حال نگارش محتوا توسط مدل هوش مصنوعی...");
+        const company = await this.db.queryOne<CompanySettings>('SELECT * FROM company_settings WHERE id = 1');
+
+        await this.orchestrator.updateProgress(jobId, 50, "Drafting content with human touch...");
+        
         const newsContext = articles.map((a) => `- ${a.title} (${a.source}): ${a.url}`).join('\n');
+        
+        // Logic for Length
+        let lengthInstruction = "1000-1500 words";
+        if (options.length === 'short') lengthInstruction = "500-800 words, concise";
+        if (options.length === 'long') lengthInstruction = "2000+ words, deep dive";
+
+        // Logic for Relation
+        let relationInstruction = "Mention the company briefly.";
+        if (options.relation === 'low') relationInstruction = "Do not mention the company unless strictly necessary. Keep it editorial.";
+        if (options.relation === 'high') relationInstruction = `Strongly connect the news to ${company?.name}'s products. Be promotional but valuable.`;
+
         const prompt = `
-          Write a comprehensive daily news round-up blog post about the following latest updates:
+          Write a Daily News Digest blog post.
+          
+          LATEST NEWS DATA:
           ${newsContext}
 
-          Context about our company:
+          COMPANY PROFILE:
           Name: ${company?.name}
           Industry: ${company?.industry}
           Target Audience: ${company?.target_audience}
           Products: ${company?.product_info}
 
-          Instructions:
-          - Analyze how these news items impact the industry.
-          - Mention our company naturally if relevant to our products (soft sell).
-          - Use the specific persona defined in the system instructions.
-          - Length: 1000-1500 words.
-          - Format: Markdown.
+          CONFIGURATION:
+          - Length: ${lengthInstruction}
+          - Brand Integration: ${relationInstruction}
+          - User Custom Instructions: ${options.customInstructions || 'None'}
+
+          CORE INSTRUCTIONS:
+          1. Synthesize the news into a cohesive narrative, don't just list them.
+          2. Adopt the persona of the writer strictly.
+          3. Remove any "As an AI" disclaimers.
+          4. Ensure the tone matches the writer's personality (e.g. if Witty, use humor).
+          5. Use Markdown formatting.
         `;
 
         const systemInstruction = `
           You are ${writer.name}. 
-          Bio: ${writer.bio}.
-          Personality: ${writer.personality}.
-          Writing Style: ${writer.style}.
+          Your Bio: ${writer.bio}.
+          Your Personality: ${writer.personality}.
+          Your Style: ${writer.style}.
+          You are writing for ${company?.name}.
         `;
 
         const content = await this.gemini.generateBlog(prompt, systemInstruction);
 
-        await this.orchestrator.updateProgress(jobId, 80, "استخراج متادیتا و سئو...");
+        await this.orchestrator.updateProgress(jobId, 80, "Optimizing for SEO and removing AI footprint...");
         const metadata = await this.gemini.extractMetadata(content);
         const slug = createSlug(metadata.title);
 
-        await this.orchestrator.updateProgress(jobId, 90, "ذخیره بلاگ در سیستم...");
+        await this.orchestrator.updateProgress(jobId, 90, "Finalizing and saving...");
         await this.db.execute(
           `INSERT INTO blogs (title, slug, content, writer_id, status, created_at, views) VALUES (?, ?, ?, ?, 'draft', CURRENT_TIMESTAMP, 0)`,
           [metadata.title, slug, content, writer.id]
         );
 
+        // Mark articles as processed
         for (const a of articles) {
-          await this.db.execute('UPDATE news_articles SET status = "processed" WHERE id = ?', [a.id]);
+          if (a.id) await this.db.execute('UPDATE news_articles SET status = "processed" WHERE id = ?', [a.id]);
         }
 
-        await this.orchestrator.updateProgress(jobId, 100, "تکمیل شد");
-        await this.orchestrator.log(jobId, "Blog generated successfully.");
-        await this.orchestrator.completeJob(jobId, 'success', 'تولید بلاگ با موفقیت انجام شد');
+        await this.orchestrator.updateProgress(jobId, 100, "Content ready");
+        await this.orchestrator.log(jobId, "Blog saved to Drafts.");
+        await this.orchestrator.completeJob(jobId, 'success', `Blog "${metadata.title}" created successfully.`);
         
         await this.orchestrator.createNotification({
             type: 'success',
             category: 'blog',
-            title: 'بلاگ روزانه آماده شد',
-            message: `مقاله "${metadata.title}" با موفقیت تولید شد.`,
-            related_job_id: jobId
+            title: 'Daily Blog Ready',
+            message: `Article "${metadata.title}" is ready for review.`,
+            related_job_id: jobId,
+            action_text: 'Edit Blog'
         });
 
       } catch (error: any) {
-        const errorMsg = error.message || "خطای ناشناخته";
-        await this.orchestrator.log(jobId, `Error: ${errorMsg}`);
-        await this.orchestrator.completeJob(jobId, 'failed', `خطا: ${errorMsg.substring(0, 50)}...`);
-        await this.orchestrator.createNotification({
-            type: 'error',
-            category: 'blog',
-            title: 'خطا در تولید بلاگ',
-            message: errorMsg,
-            related_job_id: jobId
-        });
+        await this.orchestrator.log(jobId, `Error: ${error.message}`);
+        await this.orchestrator.completeJob(jobId, 'failed', error.message);
       }
     };
 

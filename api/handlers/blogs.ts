@@ -27,20 +27,6 @@ export const handleBlogs = async (request: Request, db: DatabaseService) => {
     `, [id]);
     
     if (!blog) {
-        // Mock individual blog if not found
-        if (Number(id) < 1000) { // Only mock for reasonable IDs
-             return createResponse({
-                 id: Number(id),
-                 title: "Mock Blog Title",
-                 slug: "mock-blog-title",
-                 content: "This is a mock blog content used for demonstration purposes. It includes various elements like headers, lists, and paragraphs to visualize the editor.",
-                 writer_id: 1,
-                 writer_name: "Sara Danish",
-                 status: "draft",
-                 created_at: new Date().toISOString(),
-                 views: 120
-             });
-        }
         return createErrorResponse('Blog not found', 404);
     }
     
@@ -62,21 +48,68 @@ export const handleBlogs = async (request: Request, db: DatabaseService) => {
         : `SELECT b.*, w.name as writer_name FROM blogs b LEFT JOIN writers w ON b.writer_id = w.id ORDER BY b.created_at DESC`;
     
     const params = status ? [status] : [];
-    const blogs = await db.query<Blog>(query, params);
+    let blogs = await db.query<Blog>(query, params);
 
-    // MOCK DATA INJECTION
+    // LAZY SEEDING & FALLBACK
     if (blogs.length === 0) {
-        const mockBlogs = [
-            { id: 1, title: "The Rise of Generative AI", slug: "rise-of-gen-ai", writer_name: "Sara Danish", writer_id: 1, status: "published", created_at: new Date().toISOString(), views: 1540, content: "Content here..." },
-            { id: 2, title: "Top 10 Marketing Trends", slug: "marketing-trends", writer_name: "Ali Novin", writer_id: 2, status: "draft", created_at: new Date(Date.now() - 86400000).toISOString(), views: 0, content: "Content here..." },
-            { id: 3, title: "Introduction to Quantum Computing", slug: "quantum-computing", writer_name: "Dr. Ramin Farhadi", writer_id: 3, status: "published", created_at: new Date(Date.now() - 172800000).toISOString(), views: 890, content: "Content here..." },
-            { id: 4, title: "Web Assembly: The Future?", slug: "web-assembly", writer_name: "Sara Danish", writer_id: 1, status: "scheduled", created_at: new Date(Date.now() - 250000000).toISOString(), views: 0, content: "Content here..." }
-        ];
-        
-        if (status) {
-            return createResponse(mockBlogs.filter(b => b.status === status));
+        try {
+            // 1. Ensure a writer exists
+            let writerId = 1;
+            const writers = await db.query<{id: number}>('SELECT id FROM writers LIMIT 1');
+            
+            if (writers.length > 0) {
+                writerId = writers[0].id;
+            } else {
+                 // Create fallback writer
+                 await db.execute(`INSERT INTO writers (name, bio, personality, style, avatar_url, is_default, created_at) VALUES ('System Writer', 'AI Assistant', '{}', '{}', 'https://api.dicebear.com/7.x/avataaars/svg?seed=System', 1, CURRENT_TIMESTAMP)`);
+                 const newWriter = await db.queryOne<{id: number}>('SELECT last_insert_rowid() as id FROM writers');
+                 writerId = newWriter?.id || 1;
+            }
+            
+            const sampleBlogs = [
+                { title: "The Rise of Generative AI", status: 'published', views: 1540 },
+                { title: "Top 10 Marketing Trends", status: 'draft', views: 0 },
+                { title: "Introduction to Quantum Computing", status: 'published', views: 890 },
+                { title: "Web Assembly: The Future?", status: 'scheduled', views: 0 },
+                { title: "Sustainable Tech: Green Computing", status: 'draft', views: 0 },
+                { title: "Microservices vs Monolith Architecture", status: 'draft', views: 0 },
+                { title: "The Psychology of Color in UI Design", status: 'draft', views: 0 },
+                { title: "Cybersecurity Best Practices 2025", status: 'draft', views: 0 },
+                { title: "Remote Work Culture: A Guide", status: 'draft', views: 0 },
+                { title: "Getting Started with Rust", status: 'draft', views: 0 },
+                { title: "AI in Healthcare: Opportunities & Risks", status: 'draft', views: 0 },
+                { title: "Effective Email Marketing Strategies", status: 'draft', views: 0 }
+            ];
+
+            for(const b of sampleBlogs) {
+                const slug = b.title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+                const content = `## ${b.title}\n\nThis is a placeholder content generated for demonstration purposes. It allows you to test the editor and publishing workflow.\n\n### Key Takeaways\n\n- Point 1\n- Point 2\n- Point 3`;
+                await db.execute(
+                    `INSERT INTO blogs (title, slug, content, writer_id, status, views, created_at) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+                    [b.title, slug, content, writerId, b.status, b.views]
+                );
+            }
+
+            // Re-run query
+            blogs = await db.query<Blog>(query, params);
+        } catch (e) {
+            console.error("Seeding failed, using memory fallback", e);
         }
-        return createResponse(mockBlogs);
+
+        // 2. ULTIMATE FALLBACK: If DB is still empty or failed, return static data
+        if (blogs.length === 0) {
+            const fallbackBlogs = [
+                { id: 101, title: "Fallback: The Rise of AI", slug: "rise-ai", content: "Content...", writer_name: "Sara Danish", writer_id: 1, status: "published", created_at: new Date().toISOString(), views: 120 },
+                { id: 102, title: "Fallback: React 19 Features", slug: "react-19", content: "Content...", writer_name: "Ali Novin", writer_id: 2, status: "draft", created_at: new Date().toISOString(), views: 0 },
+                { id: 103, title: "Fallback: Cloud Computing", slug: "cloud-comp", content: "Content...", writer_name: "Dr. Ramin", writer_id: 3, status: "draft", created_at: new Date().toISOString(), views: 0 },
+                { id: 104, title: "Fallback: UX Design Principles", slug: "ux-design", content: "Content...", writer_name: "Sara Danish", writer_id: 1, status: "scheduled", created_at: new Date().toISOString(), views: 0 },
+            ];
+            
+            if (status) {
+                return createResponse(fallbackBlogs.filter(b => b.status === status));
+            }
+            return createResponse(fallbackBlogs);
+        }
     }
 
     return createResponse(blogs);
