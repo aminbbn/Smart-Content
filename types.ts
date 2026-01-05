@@ -77,6 +77,7 @@ export interface UserSettings {
   password?: string;
   avatar_url?: string;
   api_key?: string;
+  credit_balance?: number; // Added credit balance
   updated_at: string;
 }
 

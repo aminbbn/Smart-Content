@@ -122,6 +122,10 @@ export const handleUserSettings = async (request: Request, db: DatabaseService) 
 
     if (method === 'GET') {
         const user = await db.queryOne('SELECT * FROM user_settings WHERE id = 1');
+        // Ensure credit_balance defaults to 0 if null
+        if (user) {
+            (user as any).credit_balance = (user as any).credit_balance || 0;
+        }
         return createResponse(user || {});
     }
 
@@ -142,6 +146,25 @@ export const handleUserSettings = async (request: Request, db: DatabaseService) 
                 );
             }
             return createResponse({ success: true, api_key: newKey });
+        }
+
+        // Handle Add Balance
+        if (body.action === 'add_balance') {
+            const amount = parseFloat(body.amount);
+            if (isNaN(amount) || amount <= 0) return createErrorResponse('Invalid amount', 400);
+
+            const exists = await db.queryOne('SELECT id FROM user_settings WHERE id = 1');
+            if (exists) {
+                await db.execute('UPDATE user_settings SET credit_balance = COALESCE(credit_balance, 0) + ?, updated_at = CURRENT_TIMESTAMP WHERE id = 1', [amount]);
+            } else {
+                // Initialize user if not exists (edge case)
+                await db.execute(
+                    `INSERT INTO user_settings (id, first_name, last_name, email, credit_balance, updated_at) VALUES (1, 'Admin', 'User', 'admin@example.com', ?, CURRENT_TIMESTAMP)`,
+                    [amount]
+                );
+            }
+            const updated = await db.queryOne<{credit_balance: number}>('SELECT credit_balance FROM user_settings WHERE id = 1');
+            return createResponse({ success: true, new_balance: updated?.credit_balance || amount });
         }
 
         const { first_name, last_name, email, password, avatar_url } = body;

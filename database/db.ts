@@ -37,6 +37,7 @@ try {
       password TEXT,
       avatar_url TEXT,
       api_key TEXT,
+      credit_balance REAL DEFAULT 50.00,
       updated_at TEXT
     );
 
@@ -139,13 +140,14 @@ try {
   try { db.exec("ALTER TABLE feature_announcements ADD COLUMN custom_instructions TEXT"); } catch (e) {}
   try { db.exec("ALTER TABLE agent_settings ADD COLUMN integrations TEXT"); } catch (e) {}
   try { db.exec("ALTER TABLE user_settings ADD COLUMN api_key TEXT"); } catch (e) {}
+  try { db.exec("ALTER TABLE user_settings ADD COLUMN credit_balance REAL DEFAULT 50.00"); } catch (e) {}
   
   // --- AUTO SEEDING ---
   
   // Seed User Settings
   const userCount = db.prepare('SELECT count(*) as count FROM user_settings').get() as { count: number };
   if (userCount.count === 0) {
-      db.prepare(`INSERT INTO user_settings (id, first_name, last_name, email, password, avatar_url, updated_at) VALUES (1, 'Admin', 'User', 'admin@company.com', 'password123', 'https://api.dicebear.com/7.x/avataaars/svg?seed=Admin', CURRENT_TIMESTAMP)`).run();
+      db.prepare(`INSERT INTO user_settings (id, first_name, last_name, email, password, avatar_url, credit_balance, updated_at) VALUES (1, 'Admin', 'User', 'admin@company.com', 'password123', 'https://api.dicebear.com/7.x/avataaars/svg?seed=Admin', 50.00, CURRENT_TIMESTAMP)`).run();
       logger.info('Seeded user settings');
   }
 

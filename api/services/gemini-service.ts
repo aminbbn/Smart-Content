@@ -146,39 +146,57 @@ export class GeminiService {
   }
 
   async analyzeSEO(content: string, keyword: string = "general"): Promise<any> {
-    if (this.isSimulationMode || !this.ai) return { score: 85, suggestions: ["Add more headers (Simulated)", "Use active voice"] };
+    if (this.isSimulationMode || !this.ai) {
+        await new Promise(r => setTimeout(r, 800));
+        return { score: 85, suggestions: ["Add more headers (Simulated)", "Use active voice", "Increase keyword density"] };
+    }
     try {
       const response = await this.ai.models.generateContent({
         model: MODEL_FAST,
-        contents: `Analyze SEO for keyword "${keyword}". Return JSON: score, suggestions. Content: ${content.substring(0, 4000)}...`,
+        contents: `Analyze SEO for keyword "${keyword}". Return JSON with keys: 'score' (number 0-100) and 'suggestions' (array of strings). Content: ${content.substring(0, 4000)}...`,
         config: { responseMimeType: "application/json" }
       });
       return this.safeJsonParse(response.text);
-    } catch (error) { return { score: 0, suggestions: ["Analysis failed"] }; }
+    } catch (error) { 
+        console.error("SEO Tool Error", error);
+        return { score: 0, suggestions: ["Analysis failed due to API error"] }; 
+    }
   }
 
   async generateSocialPosts(content: string): Promise<any> {
-    if (this.isSimulationMode || !this.ai) return { twitter: "Check out our new post! 🚀 #AI (Simulated)", linkedin: "We just published a deep dive into AI. Read more here. (Simulated)", instagram: "New blog drop! 📸 (Simulated)" };
+    if (this.isSimulationMode || !this.ai) {
+        await new Promise(r => setTimeout(r, 800));
+        return { twitter: "Check out our new post! 🚀 #AI (Simulated)", linkedin: "We just published a deep dive into AI. Read more here. (Simulated)", instagram: "New blog drop! 📸 (Simulated)" };
+    }
     try {
       const response = await this.ai.models.generateContent({
         model: MODEL_FAST,
-        contents: `Generate JSON social posts (twitter, linkedin, instagram) for: ${content.substring(0, 3000)}...`,
+        contents: `Generate JSON social posts with keys 'twitter', 'linkedin', 'instagram' for: ${content.substring(0, 3000)}...`,
         config: { responseMimeType: "application/json" }
       });
       return this.safeJsonParse(response.text);
-    } catch (error) { return { twitter: "", linkedin: "", instagram: "" }; }
+    } catch (error) { 
+        console.error("Social Tool Error", error);
+        return { twitter: "Error generating post", linkedin: "", instagram: "" }; 
+    }
   }
 
   async checkQuality(content: string, brandVoice: string): Promise<any> {
-    if (this.isSimulationMode || !this.ai) return { naturalness_score: 92, brand_score: 88 };
+    if (this.isSimulationMode || !this.ai) {
+        await new Promise(r => setTimeout(r, 800));
+        return { naturalness_score: 92, brand_score: 88 };
+    }
     try {
         const response = await this.ai.models.generateContent({
             model: MODEL_FAST,
-            contents: `Evaluate content quality. Voice: ${brandVoice}. Return JSON: naturalness_score, brand_score. Content: ${content.substring(0, 3000)}...`,
+            contents: `Evaluate content quality. Voice: ${brandVoice}. Return JSON with keys 'naturalness_score' (0-100) and 'brand_score' (0-100). Content: ${content.substring(0, 3000)}...`,
             config: { responseMimeType: "application/json" }
         });
         return this.safeJsonParse(response.text);
-    } catch (error) { return { naturalness_score: 50, brand_score: 50 }; }
+    } catch (error) { 
+        console.error("Quality Tool Error", error);
+        return { naturalness_score: 50, brand_score: 50 }; 
+    }
   }
 
   async chatSupport(message: string, history: any[]): Promise<string> {

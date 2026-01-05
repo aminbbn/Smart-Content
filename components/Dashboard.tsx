@@ -15,6 +15,7 @@ const SpeakerIcon = () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 2
 const CalendarIcon = () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>;
 const ChartIcon = () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 002 2h2a2 2 0 002-2z" /></svg>;
 const ActivityIcon = () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>;
+const WalletIcon = () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>;
 
 // Lazy Load Components
 const CompanySettings = React.lazy(() => import('./CompanySettings'));
@@ -28,6 +29,7 @@ const FeatureAnnouncementView = React.lazy(() => import('./FeatureAnnouncementVi
 const ContentCalendar = React.lazy(() => import('./ContentCalendar'));
 const AnalyticsDashboard = React.lazy(() => import('./AnalyticsDashboard'));
 const NotificationsView = React.lazy(() => import('./NotificationsView'));
+const UsageView = React.lazy(() => import('./UsageView'));
 
 // --- Utility: Scroll Trigger ---
 interface ScrollTriggerProps {
@@ -66,6 +68,9 @@ const ScrollTrigger = ({ children, className = "", delay = 0 }: React.PropsWithC
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState('overview');
+  const [showBalanceModal, setShowBalanceModal] = useState(false);
+  const [balanceAmount, setBalanceAmount] = useState(20);
+  const [addingBalance, setAddingBalance] = useState(false);
   
   // Initialize with MOCK DATA immediately, updated by useEffect
   const [stats, setStats] = useState<any>({ 
@@ -74,6 +79,13 @@ export default function Dashboard() {
       writers: 4, 
       active_jobs: 2,
       droplinked: null 
+  });
+
+  const [user, setUser] = useState({
+      name: 'System Admin',
+      email: 'admin@company.com',
+      avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Admin',
+      credit_balance: 0
   });
   
   const [chartData, setChartData] = useState<any>({
@@ -111,8 +123,43 @@ export default function Dashboard() {
               }
           } catch(e) { console.error("Failed to fetch dashboard stats", e); }
       };
+
+      const fetchUser = async () => {
+          try {
+              const res = await fetch('/api/settings/user');
+              if (res.ok) {
+                  const json = await res.json();
+                  if (json.success && json.data) {
+                      setUser({
+                          name: `${json.data.first_name} ${json.data.last_name}`.trim() || 'System Admin',
+                          email: json.data.email || 'admin@company.com',
+                          avatar_url: json.data.avatar_url || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Admin',
+                          credit_balance: json.data.credit_balance || 0
+                      });
+                  }
+              }
+          } catch(e) { console.error("Failed to fetch user data", e); }
+      };
+
       fetchStats();
-  }, [activeTab]); // Refetch when tab changes to ensure up-to-date
+      fetchUser();
+  }, [activeTab]);
+
+  const handleAddBalance = async () => {
+      setAddingBalance(true);
+      try {
+          const res = await fetch('/api/settings/user', {
+              method: 'POST',
+              body: JSON.stringify({ action: 'add_balance', amount: balanceAmount })
+          });
+          const json = await res.json();
+          if (json.success) {
+              setUser(prev => ({ ...prev, credit_balance: json.data.new_balance }));
+              setShowBalanceModal(false);
+          }
+      } catch (e) { console.error(e); }
+      setAddingBalance(false);
+  };
 
   const renderContent = () => {
     return (
@@ -137,6 +184,7 @@ export default function Dashboard() {
                     case 'calendar': return <ContentCalendar />;
                     case 'analytics': return <AnalyticsDashboard />;
                     case 'notifications': return <NotificationsView />;
+                    case 'usage': return <UsageView onAddBalance={() => setShowBalanceModal(true)} />;
                     default: return <Overview stats={stats} chartData={chartData} setActiveTab={setActiveTab} />;
                 }
             })()}
@@ -183,6 +231,7 @@ export default function Dashboard() {
             <NavItem id="overview" label="Overview" icon={<HomeIcon />} />
             <NavItem id="analytics" label="Analytics" icon={<ChartIcon />} />
             <NavItem id="calendar" label="Content Calendar" icon={<CalendarIcon />} />
+            <NavItem id="usage" label="Usage & Billing" icon={<WalletIcon />} />
             
             <div className="px-4 py-3 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mt-6">Smart Agents</div>
             <NavItem id="agent-daily" label="Daily News" icon={<NewsIcon />} />
@@ -198,14 +247,18 @@ export default function Dashboard() {
 
         {/* User Profile Snippet */}
         <div className="p-4 m-4 mt-0 bg-slate-50 rounded-2xl border border-slate-100 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-400 to-purple-400 p-0.5">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-400 to-purple-400 p-0.5 flex-shrink-0">
                 <div className="w-full h-full bg-white rounded-full flex items-center justify-center overflow-hidden">
-                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Admin" alt="Admin" className="w-full h-full" />
+                    <img src={user.avatar_url} alt="Admin" className="w-full h-full" />
                 </div>
             </div>
-            <div className="flex-grow">
-                <p className="text-sm font-bold text-slate-800">System Admin</p>
-                <p className="text-xs text-slate-500">admin@company.com</p>
+            <div className="flex-grow overflow-hidden">
+                <p className="text-sm font-bold text-slate-800 truncate">{user.name}</p>
+                <p className="text-xs text-slate-500 truncate">{user.email}</p>
+                <p className="text-[10px] font-bold text-blue-600 mt-0.5 flex items-center gap-1">
+                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    Credit: ${user.credit_balance.toFixed(2)}
+                </p>
             </div>
             <button className="text-slate-400 hover:text-red-500 transition-colors">
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
@@ -220,6 +273,10 @@ export default function Dashboard() {
             <span className="font-bold text-slate-800">Smart Content</span>
          </div>
          <div className="flex items-center gap-3">
+             <button onClick={() => setShowBalanceModal(true)} className="flex items-center gap-1 bg-blue-50 text-blue-600 px-2 py-1 rounded-lg text-xs font-bold border border-blue-100">
+                 <span>${user.credit_balance.toFixed(0)}</span>
+                 <span className="bg-blue-600 text-white w-4 h-4 rounded-full flex items-center justify-center">+</span>
+             </button>
              <NotificationCenter align="right" onViewArchive={() => setActiveTab('notifications')} />
              <button onClick={() => {}} className="p-2 rounded-lg bg-slate-100 text-slate-600">
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16m-7 6h7" /></svg>
@@ -243,6 +300,7 @@ export default function Dashboard() {
                      activeTab === 'writers' ? 'Writers' :
                      activeTab === 'calendar' ? 'Calendar' :
                      activeTab === 'analytics' ? 'Analytics' :
+                     activeTab === 'usage' ? 'Usage & Billing' :
                      'Management Panel'}
                  </h2>
                  <p className="text-xs text-slate-400 font-medium mt-1">
@@ -250,12 +308,95 @@ export default function Dashboard() {
                  </p>
             </div>
             <div className="flex items-center gap-4">
+                {/* Credit Display (Desktop) */}
+                <div className="hidden md:flex items-center gap-3 bg-white p-1.5 pr-4 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
+                    <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    </div>
+                    <div className="flex flex-col">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Credit Balance</span>
+                        <span className="text-sm font-extrabold text-slate-800">${user.credit_balance.toFixed(2)}</span>
+                    </div>
+                    <button 
+                        onClick={() => setShowBalanceModal(true)}
+                        className="ml-2 w-8 h-8 rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center transition-colors shadow-lg shadow-blue-200"
+                        title="Add Balance"
+                    >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" /></svg>
+                    </button>
+                </div>
+
+                <div className="h-8 w-px bg-slate-200 hidden md:block"></div>
                 <NotificationCenter align="right" onViewArchive={() => setActiveTab('notifications')} />
             </div>
         </div>
 
         {renderContent()}
       </main>
+
+      {/* Add Balance Modal */}
+      {showBalanceModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fade-in">
+              <div className="bg-white rounded-3xl w-full max-w-md p-8 shadow-2xl animate-scale-in border border-slate-100 relative">
+                  <button onClick={() => setShowBalanceModal(false)} className="absolute top-6 right-6 text-slate-400 hover:text-slate-600 transition-colors">
+                      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                  </button>
+                  
+                  <div className="text-center mb-8">
+                      <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
+                          <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                      </div>
+                      <h3 className="text-2xl font-bold text-slate-800">Add Credit</h3>
+                      <p className="text-slate-500 mt-1">Top up your balance to continue using AI agents</p>
+                  </div>
+
+                  <div className="space-y-6">
+                      <div className="grid grid-cols-3 gap-3">
+                          {[10, 20, 50].map((amt) => (
+                              <button
+                                  key={amt}
+                                  onClick={() => setBalanceAmount(amt)}
+                                  className={`py-3 rounded-xl font-bold border-2 transition-all ${
+                                      balanceAmount === amt 
+                                      ? 'border-blue-600 bg-blue-50 text-blue-700' 
+                                      : 'border-slate-100 text-slate-600 hover:border-blue-200'
+                                  }`}
+                              >
+                                  ${amt}
+                              </button>
+                          ))}
+                      </div>
+
+                      <div className="relative">
+                          <span className="absolute left-4 top-3.5 text-slate-400 font-bold">$</span>
+                          <input 
+                              type="number" 
+                              className="w-full pl-8 pr-4 py-3.5 rounded-xl border-2 border-slate-200 bg-slate-50 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none font-bold text-slate-800 transition-all"
+                              value={balanceAmount}
+                              onChange={(e) => setBalanceAmount(parseFloat(e.target.value))}
+                          />
+                      </div>
+
+                      <button 
+                          onClick={handleAddBalance}
+                          disabled={addingBalance}
+                          className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-lg shadow-blue-200 transition-all active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                      >
+                          {addingBalance ? (
+                              <>
+                                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                  Processing...
+                              </>
+                          ) : (
+                              `Pay $${balanceAmount.toFixed(2)}`
+                          )}
+                      </button>
+                      
+                      <p className="text-center text-xs text-slate-400">Secure payment powered by Stripe (Simulation)</p>
+                  </div>
+              </div>
+          </div>
+      )}
     </div>
   );
 }
