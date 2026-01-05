@@ -245,24 +245,43 @@ export default function Dashboard() {
             <NavItem id="agents" label="Settings" icon={<ChipIcon />} />
         </nav>
 
-        {/* User Profile Snippet */}
-        <div className="p-4 m-4 mt-0 bg-slate-50 rounded-2xl border border-slate-100 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-400 to-purple-400 p-0.5 flex-shrink-0">
-                <div className="w-full h-full bg-white rounded-full flex items-center justify-center overflow-hidden">
-                    <img src={user.avatar_url} alt="Admin" className="w-full h-full" />
+        {/* User Profile Snippet - Redesigned */}
+        <div className="p-4 mt-auto">
+            <div className="bg-white rounded-3xl p-4 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),0_10px_20px_-2px_rgba(0,0,0,0.04)] border border-slate-100 relative group overflow-hidden transition-all duration-300 hover:shadow-[0_8px_25px_-5px_rgba(0,0,0,0.1),0_10px_10px_-5px_rgba(0,0,0,0.04)] hover:border-blue-100/50">
+                
+                {/* Glow Effect */}
+                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50/50 rounded-full blur-3xl -mr-16 -mt-16 transition-all duration-500 group-hover:bg-blue-100/50"></div>
+
+                <div className="relative z-10 flex items-center gap-3 mb-4">
+                    <div className="relative">
+                        <div className="w-12 h-12 rounded-2xl bg-slate-50 p-0.5 shadow-sm">
+                            <img src={user.avatar_url} alt="User" className="w-full h-full object-cover rounded-[10px]" />
+                        </div>
+                        <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full shadow-sm"></div>
+                    </div>
+                    <div className="flex-grow min-w-0">
+                        <h4 className="font-bold text-slate-800 text-sm truncate">{user.name}</h4>
+                        <p className="text-[11px] text-slate-400 font-medium truncate">{user.email}</p>
+                    </div>
+                    <button className="text-slate-300 hover:text-slate-500 transition-colors p-1">
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+                    </button>
+                </div>
+
+                <div className="relative z-10 bg-slate-50/80 rounded-2xl p-3 border border-slate-100 flex items-center justify-between group-hover:bg-blue-50/30 group-hover:border-blue-100 transition-all">
+                    <div>
+                        <p className="text-[9px] font-extrabold text-slate-400 uppercase tracking-widest mb-0.5">Balance</p>
+                        <p className="text-sm font-black text-slate-800 group-hover:text-blue-700 transition-colors">${user.credit_balance.toFixed(2)}</p>
+                    </div>
+                    <button 
+                        onClick={() => setShowBalanceModal(true)}
+                        className="w-8 h-8 flex items-center justify-center bg-white text-blue-600 rounded-xl shadow-sm border border-slate-200 hover:border-blue-300 hover:shadow-md hover:-translate-y-0.5 transition-all active:scale-95"
+                        title="Quick Add Funds"
+                    >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
+                    </button>
                 </div>
             </div>
-            <div className="flex-grow overflow-hidden">
-                <p className="text-sm font-bold text-slate-800 truncate">{user.name}</p>
-                <p className="text-xs text-slate-500 truncate">{user.email}</p>
-                <p className="text-[10px] font-bold text-blue-600 mt-0.5 flex items-center gap-1">
-                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                    Credit: ${user.credit_balance.toFixed(2)}
-                </p>
-            </div>
-            <button className="text-slate-400 hover:text-red-500 transition-colors">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
-            </button>
         </div>
       </aside>
 
