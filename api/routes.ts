@@ -17,6 +17,7 @@ import { handleMonitoring } from './handlers/monitoring';
 import { handleNotifications } from './handlers/notifications';
 import { handleJobCancel, handleJobStatus } from './handlers/jobs';
 import { handleSupportChat } from './handlers/chatbot';
+import { handleDroplinkedSync } from './handlers/integrations';
 
 const api = new Hono<{ Bindings: Env }>();
 
@@ -165,7 +166,7 @@ api.get('/stats', async (c) => {
                     droplinkedData = {
                         connected: true,
                         products_count: productCount,
-                        last_sync: new Date(Date.now() - 1000 * 60 * 45).toISOString(), // Mock last sync 45 mins ago
+                        last_sync: integrations.droplinked_last_sync || new Date().toISOString(),
                         blogs_published: Math.floor((blogs.c || 0) * 0.3) // Assume 30% of blogs are from Droplinked products
                     };
                 }
@@ -219,6 +220,9 @@ api.post('/tools/*', (c) => {
      const env: Env = { DB: null as any, API_KEY: process.env.API_KEY || '' };
      return handleTools(c.req.raw, env, dbInstance);
 });
+
+// Integrations
+api.post('/integrations/droplinked/sync', (c) => handleDroplinkedSync(c.req.raw, dbInstance));
 
 api.post('/support/chat', (c) => {
     const env: Env = { DB: null as any, API_KEY: process.env.API_KEY || '' };

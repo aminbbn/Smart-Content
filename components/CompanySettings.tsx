@@ -4,11 +4,11 @@ import React, { useEffect, useState, useRef } from 'react';
 interface Product {
     name: string;
     description: string;
+    image?: string;
 }
 
 export default function CompanySettings() {
     const [loading, setLoading] = useState(true);
-    // Initialize as 'idle' so nothing shows until a user interaction
     const [saveStatus, setSaveStatus] = useState<'idle' | 'saved' | 'saving' | 'error'>('idle');
     const [formData, setFormData] = useState({
         name: '',
@@ -20,10 +20,16 @@ export default function CompanySettings() {
         product_info: [] as Product[]
     });
 
-    // Ref to prevent auto-save on initial fetch
-    const ignoreNextChange = useRef(true);
+    // Droplinked Sync States
+    const [syncing, setSyncing] = useState(false);
+    const [showKeyModal, setShowKeyModal] = useState(false);
+    const [tempApiKey, setTempApiKey] = useState('');
+    const [syncError, setSyncError] = useState<string | null>(null);
+    const [toast, setToast] = useState<{message: string, type: 'success' | 'error'} | null>(null);
 
-    // Preset tones for quick selection
+    const ignoreNextChange = useRef(true);
+    const abortControllerRef = useRef<AbortController | null>(null);
+
     const tonePresets = [
         'Formal & Professional',
         'Friendly & Casual', 
@@ -34,9 +40,10 @@ export default function CompanySettings() {
 
     useEffect(() => {
         fetchData();
+        const localKey = localStorage.getItem('droplinked_api_key');
+        if (localKey) setTempApiKey(localKey);
     }, []);
 
-    // Auto-save Logic
     useEffect(() => {
         if (ignoreNextChange.current) {
             ignoreNextChange.current = false;
@@ -55,7 +62,7 @@ export default function CompanySettings() {
                 console.error(e);
                 setSaveStatus('error');
             }
-        }, 1000); // 1 second debounce
+        }, 1000);
 
         return () => clearTimeout(timer);
     }, [formData]);
@@ -66,7 +73,7 @@ export default function CompanySettings() {
             const res = await fetch('/api/settings/company');
             const json = await res.json();
             if (json.success && json.data) {
-                ignoreNextChange.current = true; // Prevent triggering auto-save
+                ignoreNextChange.current = true; 
                 setFormData(json.data);
             }
         } catch (e) {
@@ -95,8 +102,132 @@ export default function CompanySettings() {
         }));
     };
 
+    const showToastMessage = (message: string, type: 'success' | 'error' = 'success') => {
+        setToast({ message, type });
+        setTimeout(() => setToast(null), 6000); 
+    };
+
+    const handleCancelSync = () => {
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+            abortControllerRef.current = null;
+        }
+        setSyncing(false);
+        setSyncError("Sync cancelled by user");
+    };
+
+    const executeSync = async (keyOverride?: string) => {
+        if (syncing) return; 
+        
+        // Reset previous controller
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+        }
+        const controller = new AbortController();
+        abortControllerRef.current = controller;
+
+        setSyncing(true);
+        setSyncError(null);
+        
+        const storedKey = localStorage.getItem('droplinked_api_key');
+        const keyToUse = keyOverride || storedKey || '';
+
+        // NOTE: We do NOT stop here if keyToUse is empty. 
+        // We let the backend try to find the key in the database first.
+
+        try {
+            console.log("Starting Droplinked Sync...");
+            
+            // Race against a local timeout to prevent UI freeze
+            const fetchPromise = fetch('/api/integrations/droplinked/sync', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ apiKey: keyToUse }),
+                signal: controller.signal
+            });
+
+            const timeoutPromise = new Promise<Response>((_, reject) => 
+                setTimeout(() => reject(new Error("Request timed out locally")), 15000)
+            );
+
+            const res = await Promise.race([fetchPromise, timeoutPromise]);
+            
+            console.log("Sync Response Status:", res.status);
+
+            const rawText = await res.text();
+            
+            // --- DEBUG LOGGING ---
+            console.log("%c[DEBUG] Raw Server Response:", "background: #222; color: #bada55; padding: 4px;", rawText);
+            // ---------------------
+
+            // If backend returns 401, it means it couldn't find the key in DB either.
+            if (res.status === 401 || res.status === 403) {
+                setSyncing(false);
+                setShowKeyModal(true);
+                if (keyToUse) {
+                    setSyncError("Authentication failed. Please check your API Key.");
+                }
+                return;
+            }
+
+            let json;
+            try {
+                json = JSON.parse(rawText);
+            } catch (e) {
+                console.error("JSON Parse Error. Raw Text:", rawText);
+                throw new Error(`Invalid JSON from server. Preview: ${rawText.substring(0, 50)}...`);
+            }
+            
+            if (json.success) {
+                // If we used an override key successfully, save it to local storage now
+                if (keyOverride) {
+                    localStorage.setItem('droplinked_api_key', keyOverride);
+                }
+
+                setFormData(prev => ({
+                    ...prev,
+                    name: json.data.company.name || prev.name,
+                    description: json.data.company.description || prev.description,
+                    product_info: [...prev.product_info, ...json.data.products] 
+                }));
+                setShowKeyModal(false);
+                showToastMessage(`Synced! Found ${json.data.products?.length || 0} products.`);
+            } else {
+                const errMsg = json.error || 'Sync failed due to unknown error';
+                setSyncError(errMsg);
+                showToastMessage(errMsg, 'error');
+            }
+        } catch (e: any) {
+            if (e.name === 'AbortError') {
+                console.log("Sync aborted");
+                return;
+            }
+            console.error("Sync Exception:", e);
+            setSyncError(e.message);
+            showToastMessage(e.message, 'error');
+        } finally {
+            if (abortControllerRef.current === controller) {
+                setSyncing(false);
+                abortControllerRef.current = null;
+            }
+        }
+    };
+
     const handleSyncDroplinked = () => {
-        alert("Droplinked Product Sync: Feature coming in Phase 3. API key must be configured in Settings first.");
+        executeSync();
+    };
+
+    const handleKeySubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if(!tempApiKey.trim()) return;
+        // Just execute, saving happens on success
+        executeSync(tempApiKey);
+    };
+
+    const handleClearKey = () => {
+        localStorage.removeItem('droplinked_api_key');
+        setTempApiKey('');
+        setSyncError(null);
     };
 
     if (loading) return (
@@ -106,7 +237,42 @@ export default function CompanySettings() {
     );
 
     return (
-        <div className="w-full space-y-8 animate-page-enter pb-10">
+        <div className="w-full space-y-8 animate-page-enter pb-10 relative">
+            {/* Toast Notification */}
+            {toast && (
+                <div className={`fixed bottom-10 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-xl shadow-2xl z-[100] flex items-center gap-3 animate-slide-up border ${
+                    toast.type === 'success' 
+                        ? 'bg-slate-900 text-white border-slate-800' 
+                        : 'bg-white text-red-600 border-red-100'
+                }`}>
+                    {toast.type === 'success' ? (
+                        <div className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center flex-shrink-0">
+                            <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
+                        </div>
+                    ) : (
+                        <div className="w-5 h-5 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                            <svg className="w-3 h-3 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" /></svg>
+                        </div>
+                    )}
+                    <span className="font-bold text-sm">{toast.message}</span>
+                </div>
+            )}
+
+            {/* Sync Overlay */}
+            {syncing && (
+                <div className="fixed inset-0 z-[70] bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center cursor-wait">
+                    <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4"></div>
+                    <h3 className="text-xl font-bold text-slate-800">Syncing with Droplinked...</h3>
+                    <p className="text-slate-500 text-sm mt-1">Importing shop details and products</p>
+                    <button 
+                        onClick={handleCancelSync}
+                        className="mt-6 px-4 py-2 bg-white border border-slate-200 text-slate-600 text-xs font-bold rounded-lg hover:bg-red-50 hover:text-red-600 hover:border-red-100 transition-colors shadow-sm"
+                    >
+                        Cancel Operation
+                    </button>
+                </div>
+            )}
+
             {/* Header */}
             <div className="border-b border-slate-200/60 pb-6 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
                 <div>
@@ -115,7 +281,6 @@ export default function CompanySettings() {
                         Your brand identity and product details are the foundation of smart content generation.
                     </p>
                 </div>
-                {/* Status Indicator */}
                 <div className="flex items-center gap-2 mb-1 min-w-[140px] justify-end h-6">
                     {saveStatus === 'saving' && (
                         <>
@@ -276,9 +441,9 @@ export default function CompanySettings() {
                             <div className="flex gap-3">
                                 <button 
                                     onClick={handleSyncDroplinked}
-                                    className="px-4 py-2.5 bg-white border border-slate-200 text-slate-600 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 rounded-xl font-bold transition-all shadow-sm flex items-center gap-2"
+                                    className="px-4 py-2.5 bg-white border border-slate-200 text-slate-600 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 rounded-xl font-bold transition-all shadow-sm flex items-center gap-2 group"
                                 >
-                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                                    <svg className="w-4 h-4 group-hover:rotate-180 transition-transform duration-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
                                     Sync from Droplinked
                                 </button>
                                 <button 
@@ -303,34 +468,41 @@ export default function CompanySettings() {
                             )}
                             
                             {formData.product_info.map((prod, idx) => (
-                                <div key={idx} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-blue-300 transition-all group relative">
+                                <div key={idx} className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-blue-300 transition-all group relative flex gap-4">
                                     <button 
                                         onClick={() => removeProduct(idx)}
-                                        className="absolute top-4 right-4 p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                                        className="absolute top-2 right-2 p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100 z-10"
                                         title="Remove Product"
                                     >
-                                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                                     </button>
 
-                                    <div className="space-y-4">
+                                    {/* Product Image */}
+                                    <div className="w-24 h-24 flex-shrink-0 bg-slate-50 rounded-xl border border-slate-100 overflow-hidden flex items-center justify-center relative group/img">
+                                        {prod.image ? (
+                                            <img src={prod.image} alt={prod.name} className="w-full h-full object-cover" />
+                                        ) : (
+                                            <svg className="w-8 h-8 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                                        )}
+                                        {/* Optional: Add hover upload capability here later */}
+                                    </div>
+
+                                    <div className="flex-grow space-y-2 min-w-0">
                                         <div>
-                                            <label className="block text-xs font-bold text-slate-400 mb-1 group-hover:text-blue-600 transition-colors">Product/Service Name</label>
                                             <input 
                                                 type="text" 
-                                                className="w-full bg-transparent border-b-2 border-slate-100 focus:border-blue-500 focus:outline-none py-2 font-bold text-slate-800 transition-colors"
+                                                className="w-full bg-transparent border-b border-transparent focus:border-blue-500 focus:outline-none py-1 font-bold text-slate-800 transition-colors text-sm placeholder-slate-400"
                                                 value={prod.name}
                                                 onChange={e => updateProduct(idx, 'name', e.target.value)}
-                                                placeholder="Enter product name"
+                                                placeholder="Product Name"
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-xs font-bold text-slate-400 mb-1">Short Description</label>
-                                            <input 
-                                                type="text" 
-                                                className="w-full bg-slate-50 rounded-lg border-none focus:ring-2 focus:ring-blue-500/20 py-2 px-3 text-sm text-slate-600"
+                                            <textarea
+                                                className="w-full bg-slate-50 rounded-lg border-none focus:ring-2 focus:ring-blue-500/20 py-2 px-3 text-xs text-slate-600 resize-none h-14"
                                                 value={prod.description}
                                                 onChange={e => updateProduct(idx, 'description', e.target.value)}
-                                                placeholder="What is the main use case?"
+                                                placeholder="Brief description..."
                                             />
                                         </div>
                                     </div>
@@ -340,6 +512,68 @@ export default function CompanySettings() {
                     </div>
                 </div>
             </div>
+
+            {/* API Key Modal */}
+            {showKeyModal && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+                    <div className="bg-white rounded-3xl w-full max-w-md p-8 shadow-2xl animate-scale-in border border-slate-100">
+                        <div className="flex flex-col items-center text-center mb-6">
+                            <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mb-4 shadow-sm border border-blue-100">
+                                <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" /></svg>
+                            </div>
+                            <h3 className="text-xl font-bold text-slate-800">Connect Droplinked</h3>
+                            <p className="text-slate-500 text-sm mt-2 leading-relaxed">
+                                Enter your Droplinked API Key to automatically sync your shop information and products.
+                            </p>
+                        </div>
+
+                        <form onSubmit={handleKeySubmit} className="space-y-4">
+                            <div className="relative">
+                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">API Key</label>
+                                <input 
+                                    type="password" 
+                                    className="w-full rounded-xl border-2 border-slate-200 bg-slate-50 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 px-4 py-3.5 text-slate-800 transition-all font-bold placeholder-slate-400 pr-10"
+                                    placeholder="Enter your API key..."
+                                    value={tempApiKey}
+                                    onChange={e => setTempApiKey(e.target.value)}
+                                    autoFocus
+                                />
+                                {tempApiKey && (
+                                    <button 
+                                        type="button" 
+                                        onClick={handleClearKey} 
+                                        className="absolute right-3 top-[38px] text-slate-400 hover:text-red-500 transition-colors"
+                                        title="Clear stored key"
+                                    >
+                                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                                    </button>
+                                )}
+                            </div>
+                            
+                            {syncError && (
+                                <p className="text-xs text-red-500 font-bold text-center bg-red-50 py-2 rounded-lg break-all">{syncError}</p>
+                            )}
+
+                            <div className="flex gap-3 pt-2">
+                                <button 
+                                    type="button"
+                                    onClick={() => setShowKeyModal(false)}
+                                    className="flex-1 py-3.5 text-slate-500 font-bold hover:bg-slate-50 rounded-xl transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button 
+                                    type="submit"
+                                    className="flex-1 py-3.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all active:scale-95"
+                                >
+                                    Connect & Sync
+                                </button>
+                            </div>
+                            <p className="text-[10px] text-center text-slate-400">Key will be saved locally for this session.</p>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

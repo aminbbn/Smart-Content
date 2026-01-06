@@ -5,6 +5,7 @@ export default function Settings() {
     const [loading, setLoading] = useState(true);
     const [saveStatus, setSaveStatus] = useState<'idle' | 'saved' | 'saving' | 'error'>('idle');
     const [isEditing, setIsEditing] = useState(false);
+    const [toast, setToast] = useState<{message: string, type: 'success' | 'error'} | null>(null);
     
     // API Access State
     const [apiKey, setApiKey] = useState('');
@@ -74,14 +75,18 @@ export default function Settings() {
         try {
             // Fetch Agent Settings
             const resAgent = await fetch('/api/settings/agents');
+            let dbDroplinkedKey = '';
+            
             if (resAgent.ok) {
                 const json = await resAgent.json();
                 if (json.success && json.data) {
-                    ignoreNextAgentChange.current = true;
+                    // Don't set ignoreNextAgentChange here yet, wait until we merge local storage
                     const currentConfig = json.data.model_config || {};
                     const integrations = json.data.integrations || {};
+                    dbDroplinkedKey = integrations.droplinked_api_key || '';
                     
-                    setAgentFormData({
+                    setAgentFormData(prev => ({
+                        ...prev,
                         model_config: {
                             temperature: 0.7,
                             model_name: 'gemini-3-pro-preview',
@@ -90,9 +95,9 @@ export default function Settings() {
                             ...currentConfig
                         },
                         integrations: {
-                            droplinked_api_key: integrations.droplinked_api_key || ''
+                            droplinked_api_key: dbDroplinkedKey
                         }
-                    });
+                    }));
                 }
             }
 
@@ -105,6 +110,18 @@ export default function Settings() {
                     if (json.data.api_key) setApiKey(json.data.api_key);
                 }
             }
+            
+            // Sync with Local Storage (Priority: Local Storage > DB if DB is empty, or just ensure consistency)
+            const localKey = localStorage.getItem('droplinked_api_key');
+            if (localKey && !dbDroplinkedKey) {
+                setAgentFormData(prev => ({
+                    ...prev,
+                    integrations: { ...prev.integrations, droplinked_api_key: localKey }
+                }));
+            }
+            
+            // Determine ignore flag after setting initial state
+            setTimeout(() => { ignoreNextAgentChange.current = true; }, 100);
 
         } catch (e) {
             console.error(e);
@@ -124,6 +141,33 @@ export default function Settings() {
             ...prev,
             integrations: { ...prev.integrations, [key]: value }
         }));
+    };
+    
+    const showToastMessage = (message: string, type: 'success' | 'error' = 'success') => {
+        setToast({ message, type });
+        setTimeout(() => setToast(null), 3000);
+    };
+
+    const handleConnectDroplinked = () => {
+        const key = agentFormData.integrations.droplinked_api_key;
+        if(key) {
+            localStorage.setItem('droplinked_api_key', key);
+            setSaveStatus('saved');
+            showToastMessage("Droplinked account connected successfully!");
+            setTimeout(() => setSaveStatus('idle'), 2000);
+            
+            // Force a save to backend immediately
+            fetch('/api/settings/agents', {
+                method: 'POST',
+                body: JSON.stringify({
+                    ...agentFormData,
+                    is_active: false,
+                    schedule_config: {}
+                })
+            }).catch(e => console.error("Backend save failed", e));
+        } else {
+            showToastMessage("Please enter an API Key first", 'error');
+        }
     };
 
     const handleImageError = (e: any) => {
@@ -200,6 +244,26 @@ export default function Settings() {
 
     return (
         <div className="w-full space-y-8 animate-page-enter pb-10">
+            {/* Toast Notification */}
+            {toast && (
+                <div className={`fixed bottom-10 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-xl shadow-2xl z-[100] flex items-center gap-3 animate-slide-up border ${
+                    toast.type === 'success' 
+                        ? 'bg-slate-900 text-white border-slate-800' 
+                        : 'bg-white text-red-600 border-red-100'
+                }`}>
+                    {toast.type === 'success' ? (
+                        <div className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center">
+                            <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
+                        </div>
+                    ) : (
+                        <div className="w-5 h-5 rounded-full bg-red-100 flex items-center justify-center">
+                            <svg className="w-3 h-3 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" /></svg>
+                        </div>
+                    )}
+                    <span className="font-bold text-sm">{toast.message}</span>
+                </div>
+            )}
+
             {/* Page Header */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-slate-200/60 pb-6">
                 <div>
@@ -437,7 +501,6 @@ export default function Settings() {
                             </div>
                         </div>
 
-                        {/* Visual Metrics Filler */}
                         <div className="mt-6 pt-6 border-t border-slate-100">
                             <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Performance Metrics</h4>
                             <div className="space-y-4">
@@ -506,7 +569,7 @@ export default function Settings() {
                             </div>
                         </div>
 
-                        {/* Dynamic Description Box - Expanded to fill height */}
+                        {/* Dynamic Description Box */}
                         <div className="bg-blue-50/50 rounded-2xl p-6 border border-blue-100/60 flex-grow flex flex-col justify-center">
                             <div className="flex items-center justify-between mb-3">
                                 <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">Selected Mode</span>
@@ -637,6 +700,7 @@ export default function Settings() {
                                     </div>
                                 </div>
                                 <button 
+                                    onClick={handleConnectDroplinked}
                                     className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all shadow-lg shadow-blue-200 active:scale-95 whitespace-nowrap flex-shrink-0"
                                 >
                                     Connect Account
