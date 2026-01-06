@@ -44,9 +44,30 @@ export const handleAgents = async (request: Request, env: Env, db: DatabaseServi
       if (!body.prompt) return createErrorResponse("Prompt required", 400);
       
       const agent = new ResearchAgent(env, db);
-      const taskId = await agent.startResearch(body.prompt, body.writerId, body.customInstructions);
-      ctx.waitUntil(agent.executeResearch(taskId));
-      return createResponse({ taskId, message: 'Research task started' });
+      const taskId = await agent.startResearch(
+          body.prompt, 
+          body.writerId, 
+          body.customInstructions,
+          body.scanVolume
+      );
+      
+      ctx.waitUntil(agent.performResearch(taskId));
+      return createResponse({ taskId, message: 'Research phase started' });
+    }
+
+    if (path === 'research/generate' && method === 'POST') {
+        const body = await request.json() as any;
+        if (!body.taskId) return createErrorResponse("Task ID required", 400);
+
+        const agent = new ResearchAgent(env, db);
+        const { jobId, work } = await (agent as any).generateReportWithJobId(body.taskId, {
+            writerId: body.writerId,
+            length: body.length,
+            relation: body.relation
+        });
+        
+        ctx.waitUntil(work);
+        return createResponse({ jobId, message: 'Report generation started' });
     }
 
     if (path === 'research/tasks' && method === 'GET') {
@@ -56,7 +77,7 @@ export const handleAgents = async (request: Request, env: Env, db: DatabaseServi
       if (tasks.length === 0) {
           const mockTasks = [
               { id: 1, query: "Impact of AI on Healthcare", status: "completed", created_at: new Date().toISOString(), results: JSON.stringify({ progress: 100, logs: ["Research started...", "Found 12 sources", "Drafting content", "Complete"] }) },
-              { id: 2, query: "Sustainable Energy Trends 2025", status: "researching", created_at: new Date(Date.now() - 300000).toISOString(), results: JSON.stringify({ progress: 45, logs: ["Research started...", "Analyzing market data..."] }) },
+              { id: 2, query: "Sustainable Energy Trends 2025", status: "researched", created_at: new Date(Date.now() - 300000).toISOString(), results: JSON.stringify({ progress: 100, logs: ["Research started...", "Analyzing market data...", "Research Complete"], researchData: "Mock data..." }) },
               { id: 3, query: "History of the Internet", status: "failed", created_at: new Date(Date.now() - 800000).toISOString(), results: JSON.stringify({ progress: 20, logs: ["Research started...", "Error connecting to search tool"] }) }
           ];
           return createResponse(mockTasks);
@@ -77,6 +98,7 @@ export const handleAgents = async (request: Request, env: Env, db: DatabaseServi
       const body = await request.json() as any;
       const agent = new FeatureAnnouncementAgent(env, db);
       
+      // Phase 1 Start: Create record
       const id = await agent.createAnnouncement(
           body.productName, 
           body.featureName, 
@@ -84,8 +106,33 @@ export const handleAgents = async (request: Request, env: Env, db: DatabaseServi
           body.customInstructions
       );
       
-      ctx.waitUntil(agent.researchAndWrite(id, body.writerId));
-      return createResponse({ id, message: 'Announcement creation started' });
+      return createResponse({ id, message: 'Announcement draft created' });
+    }
+
+    if (path === 'feature-announcement/research' && method === 'POST') {
+      const body = await request.json() as any;
+      if (!body.id) return createErrorResponse("ID required", 400);
+      
+      const agent = new FeatureAnnouncementAgent(env, db);
+      // Fire and forget research job, we can track via job list polling or basic status check
+      ctx.waitUntil(agent.performMarketAnalysis(body.id, body.scanVolume || 3));
+      
+      return createResponse({ success: true, message: 'Market analysis started' });
+    }
+
+    if (path === 'feature-announcement/generate' && method === 'POST') {
+      const body = await request.json() as any;
+      if (!body.id) return createErrorResponse("ID required", 400);
+      
+      const agent = new FeatureAnnouncementAgent(env, db);
+      const { jobId, work } = await agent.generateAnnouncement(body.id, {
+          writerId: body.writerId,
+          length: body.length,
+          relation: body.relation
+      });
+      
+      ctx.waitUntil(work);
+      return createResponse({ jobId, message: 'Announcement generation started' });
     }
     
     if (path === 'feature-announcement/list' && method === 'GET') {

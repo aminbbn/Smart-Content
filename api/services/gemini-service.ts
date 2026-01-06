@@ -132,13 +132,13 @@ export class GeminiService {
     } catch (error) { return { title: "Untitled", excerpt: "", tags: [] }; }
   }
 
-  async researchTopic(query: string): Promise<string[]> {
-    if (this.isSimulationMode || !this.ai) return ["Insight 1: AI adoption is growing (Simulated)", "Insight 2: Costs are dropping (Simulated)", "Insight 3: Quality is improving (Simulated)"];
+  async researchTopic(query: string, count: number = 3): Promise<string[]> {
+    if (this.isSimulationMode || !this.ai) return [`Insight 1: ${query} is growing (Simulated)`, `Insight 2: Market trend for ${query} (Simulated)`, `Insight 3: Analysis of ${query} (Simulated)`];
     
     try {
       const response = await this.ai.models.generateContent({
         model: MODEL_FAST,
-        contents: `Research: "${query}". Provide 3 key insights.`,
+        contents: `Research: "${query}". Provide ${count} key insights with data if possible.`,
         config: { tools: [{ googleSearch: {} }] }
       });
       return [response.text || ""];

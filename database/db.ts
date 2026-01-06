@@ -93,6 +93,7 @@ try {
       feature_name TEXT,
       description TEXT,
       custom_instructions TEXT,
+      research_data TEXT,
       status TEXT,
       created_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
@@ -138,6 +139,7 @@ try {
   try { db.exec("ALTER TABLE writers ADD COLUMN is_default INTEGER DEFAULT 0"); } catch (e) {}
   try { db.exec("ALTER TABLE feature_announcements ADD COLUMN product_name TEXT"); } catch (e) {}
   try { db.exec("ALTER TABLE feature_announcements ADD COLUMN custom_instructions TEXT"); } catch (e) {}
+  try { db.exec("ALTER TABLE feature_announcements ADD COLUMN research_data TEXT"); } catch (e) {} // New Migration
   try { db.exec("ALTER TABLE agent_settings ADD COLUMN integrations TEXT"); } catch (e) {}
   try { db.exec("ALTER TABLE user_settings ADD COLUMN api_key TEXT"); } catch (e) {}
   try { db.exec("ALTER TABLE user_settings ADD COLUMN credit_balance REAL DEFAULT 50.00"); } catch (e) {}

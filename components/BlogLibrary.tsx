@@ -233,7 +233,7 @@ export default function BlogLibrary() {
                                 <input 
                                     type="date" 
                                     required
-                                    className="w-full px-4 py-2 rounded-xl border-2 border-slate-200 focus:border-blue-500 outline-none text-sm font-medium"
+                                    className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 bg-white text-slate-800 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none text-sm font-medium transition-all"
                                     value={scheduleDate}
                                     onChange={e => setScheduleDate(e.target.value)}
                                 />
@@ -243,7 +243,7 @@ export default function BlogLibrary() {
                                 <input 
                                     type="time" 
                                     required
-                                    className="w-full px-4 py-2 rounded-xl border-2 border-slate-200 focus:border-blue-500 outline-none text-sm font-medium"
+                                    className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 bg-white text-slate-800 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none text-sm font-medium transition-all"
                                     value={scheduleTime}
                                     onChange={e => setScheduleTime(e.target.value)}
                                 />

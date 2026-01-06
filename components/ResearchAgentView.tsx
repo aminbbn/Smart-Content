@@ -2,6 +2,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { ResearchTask, Writer } from '../types';
 import WriterSelector from './WriterSelector';
+import JobProgress from './JobProgress';
 
 // --- Utility Components ---
 
@@ -34,17 +35,53 @@ const ScrollObserver = ({ children, delay = 0, className = "" }: { children?: Re
     );
 };
 
+const SegmentedControl = ({ options, value, onChange, disabled }: { options: string[], value: string, onChange: (val: any) => void, disabled?: boolean }) => {
+    return (
+        <div className="relative flex bg-slate-100 p-1.5 rounded-xl border border-slate-200/60 shadow-inner w-full">
+            {options.map((opt) => (
+                <button
+                    key={opt}
+                    onClick={() => !disabled && onChange(opt)}
+                    disabled={disabled}
+                    className={`flex-1 relative z-10 py-3 text-xs font-bold capitalize transition-colors duration-300 ${
+                        value === opt ? 'text-slate-800' : 'text-slate-400 hover:text-slate-600'
+                    } ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
+                >
+                    {opt}
+                </button>
+            ))}
+            {/* Sliding Pill Background */}
+            <div 
+                className="absolute top-1.5 bottom-1.5 bg-white rounded-lg shadow-sm border border-black/5 transition-all duration-300 cubic-bezier(0.4, 0, 0.2, 1)"
+                style={{ 
+                    left: `${(options.indexOf(value) * 100) / options.length + 1}%`, 
+                    width: `${98 / options.length}%` 
+                }}
+            />
+        </div>
+    );
+};
+
 export default function ResearchAgentView() {
     const [tasks, setTasks] = useState<ResearchTask[]>([]);
     const [writers, setWriters] = useState<Writer[]>([]);
     const [suggestions, setSuggestions] = useState<string[]>([]);
     const [suggestionsLoading, setSuggestionsLoading] = useState(false);
     
+    // UI State
+    const [activeJobId, setActiveJobId] = useState<number | null>(null);
+    const [loadingAction, setLoadingAction] = useState<'research' | 'generate' | null>(null);
+    const [currentTaskId, setCurrentTaskId] = useState<number | null>(null); // To track the task being worked on in this session
+
     // Form State
     const [prompt, setPrompt] = useState('');
     const [selectedWriter, setSelectedWriter] = useState<number | string>('');
     const [customInstructions, setCustomInstructions] = useState('');
-    const [loading, setLoading] = useState(false);
+    const [config, setConfig] = useState({
+        scanVolume: 5,
+        length: 'medium' as 'short' | 'medium' | 'long',
+        relation: 'medium' as 'low' | 'medium' | 'high'
+    });
 
     useEffect(() => {
         fetchTasks();
@@ -92,24 +129,72 @@ export default function ResearchAgentView() {
         setSuggestionsLoading(false);
     };
 
-    const handleStart = async (e: React.FormEvent) => {
+    const triggerResearch = async (e: React.FormEvent) => {
         e.preventDefault();
-        setLoading(true);
+        if (!prompt) return;
+        setLoadingAction('research');
+        
         try {
-            await fetch('/api/agents/research/start', {
+            const res = await fetch('/api/agents/research/start', {
                 method: 'POST',
                 body: JSON.stringify({ 
                     prompt, 
                     writerId: selectedWriter ? Number(selectedWriter) : undefined,
-                    customInstructions
+                    customInstructions,
+                    scanVolume: config.scanVolume
                 })
             });
-            setPrompt('');
-            setCustomInstructions('');
-            fetchTasks();
+            const json = await res.json();
+            
+            if (json.success && json.data.taskId) {
+                // For research, the backend wrapper doesn't currently return a jobId directly in response 
+                // because it fires async. However, our new API handler structure might.
+                // Assuming it just queues task. But wait, we want to track it.
+                // In ResearchAgentView logic, we rely on the task list updates usually.
+                // But let's track the task ID so we know when Phase 1 is done for this session.
+                setCurrentTaskId(json.data.taskId);
+                
+                // Reset form fields
+                setPrompt('');
+                setCustomInstructions('');
+            }
         } catch (e) { console.error(e); }
-        setLoading(false);
+        
+        // We clear loading action quickly because we switch to monitoring task list
+        // Real tracking would require a jobId returned from start endpoint
+        setTimeout(() => setLoadingAction(null), 1000); 
+        fetchTasks();
     };
+
+    const triggerGenerate = async () => {
+        // Can use currentTaskId from session or the most recent 'researched' task
+        const targetId = currentTaskId || tasks.find(t => t.status === 'researched')?.id;
+        if (!targetId) return;
+
+        setLoadingAction('generate');
+        try {
+            const res = await fetch('/api/agents/research/generate', {
+                method: 'POST',
+                body: JSON.stringify({
+                    taskId: targetId,
+                    writerId: selectedWriter ? Number(selectedWriter) : undefined,
+                    length: config.length,
+                    relation: config.relation
+                })
+            });
+            const json = await res.json();
+            
+            if (json.success && json.data.jobId) {
+                setActiveJobId(json.data.jobId);
+            }
+        } catch(e) { console.error(e); }
+        // Keep loading state until JobProgress finishes
+    };
+
+    // Find active task status for the current session task
+    const activeTask = tasks.find(t => t.id === currentTaskId);
+    const isPhase1Complete = activeTask?.status === 'researched';
+    const isPhase2Ready = !!activeTask && isPhase1Complete;
 
     return (
         <div className="w-full space-y-12 pb-20">
@@ -128,10 +213,9 @@ export default function ResearchAgentView() {
                 </div>
             </ScrollObserver>
 
-            {/* SECTION 1: Mission Control (Full Width) */}
+            {/* SECTION 1: Mission Control */}
             <ScrollObserver delay={100}>
                 <div className="bg-white rounded-[2.5rem] shadow-xl shadow-slate-200/50 border border-slate-100 p-8 md:p-10 relative overflow-hidden group">
-                    {/* Decorative Top Border */}
                     <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-blue-500 via-indigo-500 to-blue-600 opacity-80"></div>
                     
                     <div className="flex items-center gap-4 mb-8">
@@ -139,17 +223,16 @@ export default function ResearchAgentView() {
                             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" /></svg>
                         </div>
                         <div>
-                            <h3 className="font-bold text-xl text-slate-800 leading-tight">New Research Mission</h3>
+                            <h3 className="font-bold text-xl text-slate-800 leading-tight">Research Mission</h3>
                             <p className="text-xs text-slate-400 font-bold tracking-wider uppercase mt-0.5">Define Parameters</p>
                         </div>
                     </div>
 
-                    <form onSubmit={handleStart}>
+                    <form onSubmit={triggerResearch}>
                         <div className="grid grid-cols-1 gap-10">
-                            {/* Topic Input & Suggestions */}
+                            {/* Topic Input */}
                             <div className="space-y-4">
                                 <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest ml-1">Research Topic</label>
-                                
                                 <div className="relative group/input">
                                     <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-200 to-indigo-200 rounded-2xl opacity-0 group-hover/input:opacity-50 transition duration-500 blur"></div>
                                     <textarea 
@@ -158,99 +241,126 @@ export default function ResearchAgentView() {
                                         placeholder="e.g. The impact of Generative AI on Enterprise Software Development in 2025..."
                                         value={prompt}
                                         onChange={e => setPrompt(e.target.value)}
+                                        disabled={loadingAction !== null || activeJobId !== null}
                                     />
                                 </div>
-
-                                {/* AI Suggestions Carousel */}
+                                {/* Suggestions */}
                                 <div className="space-y-2">
                                     <div className="flex justify-between items-center px-1">
                                         <span className="text-[10px] font-bold text-blue-600 uppercase tracking-wide flex items-center gap-1">
-                                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-                                            AI Suggestions for You
+                                            AI Suggestions
                                         </span>
-                                        <button 
-                                            type="button" 
-                                            onClick={fetchSuggestions} 
-                                            className="text-[10px] text-slate-400 hover:text-blue-600 transition-colors"
-                                            disabled={suggestionsLoading}
-                                        >
-                                            {suggestionsLoading ? 'Thinking...' : 'Refresh Ideas'}
-                                        </button>
+                                        <button type="button" onClick={fetchSuggestions} className="text-[10px] text-slate-400 hover:text-blue-600 transition-colors" disabled={suggestionsLoading}>{suggestionsLoading ? 'Thinking...' : 'Refresh Ideas'}</button>
                                     </div>
-                                    
                                     <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide snap-x">
-                                        {suggestions.length > 0 ? (
-                                            suggestions.map((sug, i) => (
-                                                <button
-                                                    key={i}
-                                                    type="button"
-                                                    onClick={() => setPrompt(sug)}
-                                                    className="snap-start flex-shrink-0 bg-white border border-slate-200 hover:border-blue-300 hover:bg-blue-50 px-4 py-3 rounded-xl text-sm font-medium text-slate-600 hover:text-blue-700 transition-all shadow-sm text-left max-w-[250px] whitespace-normal group"
-                                                >
-                                                    <span className="line-clamp-2">{sug}</span>
-                                                </button>
-                                            ))
-                                        ) : (
-                                            [1,2,3].map(i => (
-                                                <div key={i} className="flex-shrink-0 w-48 h-12 bg-slate-100 rounded-xl animate-pulse"></div>
-                                            ))
-                                        )}
+                                        {suggestions.length > 0 ? suggestions.map((sug, i) => (
+                                            <button key={i} type="button" onClick={() => setPrompt(sug)} className="snap-start flex-shrink-0 bg-white border border-slate-200 hover:border-blue-300 hover:bg-blue-50 px-4 py-3 rounded-xl text-sm font-medium text-slate-600 hover:text-blue-700 transition-all shadow-sm text-left max-w-[250px] whitespace-normal group">
+                                                <span className="line-clamp-2">{sug}</span>
+                                            </button>
+                                        )) : [1,2,3].map(i => <div key={i} className="flex-shrink-0 w-48 h-12 bg-slate-100 rounded-xl animate-pulse"></div>)}
                                     </div>
                                 </div>
                             </div>
 
+                            {/* Configuration Grid */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                                {/* Writer */}
-                                <div className="space-y-3">
-                                    <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest ml-1">Assigned Writer</label>
-                                    <WriterSelector 
-                                        writers={writers}
-                                        selectedId={selectedWriter}
-                                        onChange={setSelectedWriter}
-                                        disabled={loading}
-                                    />
+                                <div className="space-y-8">
+                                    {/* Writer */}
+                                    <div className="space-y-3">
+                                        <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest ml-1">Assigned Writer</label>
+                                        <WriterSelector writers={writers} selectedId={selectedWriter} onChange={setSelectedWriter} disabled={loadingAction !== null} />
+                                    </div>
+                                    
+                                    {/* Scan Volume */}
+                                    <div className="space-y-4">
+                                        <div className="flex justify-between items-center">
+                                            <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest ml-1">Scan Volume</label>
+                                            <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-md border border-blue-100">{config.scanVolume} Sources</span>
+                                        </div>
+                                        <div className="relative h-3 bg-slate-100 rounded-full overflow-hidden">
+                                            <div className="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-400 to-indigo-500 transition-all duration-300" style={{ width: `${(config.scanVolume / 20) * 100}%` }}></div>
+                                            <input type="range" min="1" max="20" value={config.scanVolume} onChange={(e) => setConfig({...config, scanVolume: parseInt(e.target.value)})} disabled={loadingAction !== null} className="absolute top-0 left-0 w-full h-full opacity-0 cursor-pointer" />
+                                        </div>
+                                        <div className="flex justify-between text-[10px] text-slate-300 font-bold font-mono"><span>1</span><span>10</span><span>20</span></div>
+                                    </div>
                                 </div>
 
-                                {/* Custom Instructions */}
-                                <div className="space-y-3">
-                                    <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest ml-1">Research Focus & Guidelines</label>
-                                    <textarea 
-                                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm font-medium text-slate-700 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none resize-none h-[88px] placeholder-slate-400 leading-relaxed shadow-inner"
-                                        placeholder="Specific angles to cover, competitors to analyze, or tone adjustments..."
-                                        value={customInstructions}
-                                        onChange={e => setCustomInstructions(e.target.value)}
-                                        disabled={loading}
-                                    />
+                                <div className="space-y-8">
+                                    {/* Length & Relation */}
+                                    <div className="grid grid-cols-2 gap-6">
+                                        <div className="space-y-3">
+                                            <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest ml-1">Length</label>
+                                            <SegmentedControl options={['short', 'medium', 'long']} value={config.length} onChange={(val) => setConfig({...config, length: val})} disabled={loadingAction !== null} />
+                                        </div>
+                                        <div className="space-y-3">
+                                            <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest ml-1">Brand Relation</label>
+                                            <SegmentedControl options={['low', 'medium', 'high']} value={config.relation} onChange={(val) => setConfig({...config, relation: val})} disabled={loadingAction !== null} />
+                                        </div>
+                                    </div>
+
+                                    {/* Custom Instructions */}
+                                    <div className="space-y-3">
+                                        <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest ml-1">Custom Guidelines</label>
+                                        <textarea className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm font-medium text-slate-700 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none resize-none h-24 placeholder-slate-400 leading-relaxed shadow-inner" placeholder="Specific focus angles, competitors to avoid, or required sections..." value={customInstructions} onChange={e => setCustomInstructions(e.target.value)} disabled={loadingAction !== null} />
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Action Bar */}
-                        <div className="mt-10 pt-8 border-t border-slate-100">
+                        {/* Two-Phase Action Bar */}
+                        <div className="mt-10 pt-8 border-t border-slate-100 flex flex-col sm:flex-row gap-4">
                             <button 
                                 type="submit" 
-                                disabled={loading || !prompt}
-                                className="w-full relative overflow-hidden group bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-lg py-4 shadow-xl shadow-slate-900/10 transition-all active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                                disabled={loadingAction !== null || activeJobId !== null || !prompt}
+                                className={`flex-1 relative overflow-hidden group rounded-xl font-bold text-base py-4 shadow-xl transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 ${
+                                    isPhase1Complete ? 'bg-slate-100 text-slate-400 border border-slate-200' : 'bg-slate-900 hover:bg-slate-800 text-white shadow-slate-900/10'
+                                }`}
                             >
-                                <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-shimmer"></div>
-                                <div className="flex items-center justify-center gap-3">
-                                    {loading ? (
-                                        <>
-                                            <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-                                            <span>Initializing Agents...</span>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <svg className="w-5 h-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" /></svg>
-                                            <span>Launch Research Mission</span>
-                                        </>
-                                    )}
-                                </div>
+                                {loadingAction === 'research' ? (
+                                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                ) : (
+                                    <svg className={`w-5 h-5 ${isPhase1Complete ? 'text-slate-400' : 'text-blue-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                                )}
+                                <span>{isPhase1Complete ? 'Research Complete' : 'Phase 1: Deep Research'}</span>
+                            </button>
+
+                            <button 
+                                type="button"
+                                onClick={triggerGenerate}
+                                disabled={loadingAction !== null || !isPhase2Ready || activeJobId !== null}
+                                className={`flex-1 py-4 rounded-xl font-bold text-base transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 group shadow-sm border ${
+                                    isPhase2Ready 
+                                    ? 'bg-blue-600 text-white hover:bg-blue-700 border-blue-600 shadow-blue-200' 
+                                    : 'bg-white border-slate-200 text-slate-400'
+                                }`}
+                            >
+                                {loadingAction === 'generate' ? (
+                                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                ) : (
+                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                                )}
+                                <span>Phase 2: Generate Report</span>
                             </button>
                         </div>
                     </form>
                 </div>
             </ScrollObserver>
+
+            {/* Active Job Progress */}
+            {activeJobId && (
+                <div className="animate-scale-in">
+                    <JobProgress 
+                        jobId={activeJobId} 
+                        onComplete={() => {
+                            setActiveJobId(null);
+                            setLoadingAction(null);
+                            fetchTasks();
+                            // If we just finished generation (Phase 2), we can clear currentTaskId to reset flow or keep it
+                            if (loadingAction === 'generate') setCurrentTaskId(null);
+                        }}
+                    />
+                </div>
+            )}
 
             {/* SECTION 2: Active Missions List */}
             <ScrollObserver delay={200}>
@@ -274,33 +384,42 @@ export default function ResearchAgentView() {
                             {tasks.map((task, index) => {
                                 const results = (task.results as any) || { progress: 0, logs: [] };
                                 const isCompleted = task.status === 'completed';
+                                const isResearched = task.status === 'researched';
                                 const isFailed = task.status === 'failed';
-                                const isRunning = !isCompleted && !isFailed;
+                                const isRunning = task.status === 'researching' || task.status === 'pending';
 
                                 return (
-                                    <div key={task.id} className={`bg-white rounded-3xl shadow-sm border border-slate-100 p-6 animate-card-enter stagger-${index % 5} hover:shadow-md transition-shadow relative overflow-hidden`}>
-                                        {/* Status Line */}
-                                        <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${isCompleted ? 'bg-green-500' : isFailed ? 'bg-red-500' : 'bg-blue-600'}`}></div>
+                                    <div key={task.id} className={`bg-white rounded-3xl shadow-sm border border-slate-100 p-6 animate-card-enter stagger-${index % 5} hover:shadow-md transition-shadow relative overflow-hidden ${task.id === currentTaskId ? 'ring-2 ring-blue-500/20' : ''}`}>
+                                        <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${isCompleted ? 'bg-green-500' : isFailed ? 'bg-red-500' : isResearched ? 'bg-amber-500' : 'bg-blue-600'}`}></div>
                                         
                                         <div className="flex flex-col md:flex-row gap-6">
-                                            {/* Left: Info */}
                                             <div className="flex-1">
                                                 <div className="flex justify-between items-start mb-3">
                                                     <h4 className="font-bold text-slate-800 text-lg line-clamp-1">{task.query}</h4>
-                                                    <span className={`text-[10px] font-bold px-2 py-1 rounded-lg uppercase tracking-wider ${
-                                                        isCompleted ? 'bg-green-50 text-green-600' : 
-                                                        isFailed ? 'bg-red-50 text-red-600' : 
-                                                        'bg-blue-50 text-blue-600'
-                                                    }`}>
-                                                        {isCompleted ? 'Done' : isFailed ? 'Failed' : 'Active'}
-                                                    </span>
+                                                    <div className="flex gap-2">
+                                                        {isResearched && (
+                                                            <button 
+                                                                onClick={() => setCurrentTaskId(task.id)}
+                                                                className="text-[10px] font-bold px-2 py-1 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
+                                                            >
+                                                                Continue to Phase 2
+                                                            </button>
+                                                        )}
+                                                        <span className={`text-[10px] font-bold px-2 py-1 rounded-lg uppercase tracking-wider ${
+                                                            isCompleted ? 'bg-green-50 text-green-600' : 
+                                                            isFailed ? 'bg-red-50 text-red-600' : 
+                                                            isResearched ? 'bg-amber-50 text-amber-600' :
+                                                            'bg-blue-50 text-blue-600'
+                                                        }`}>
+                                                            {isCompleted ? 'Done' : isFailed ? 'Failed' : isResearched ? 'Researched' : 'Researching'}
+                                                        </span>
+                                                    </div>
                                                 </div>
                                                 
-                                                {/* Progress Bar */}
                                                 <div className="flex items-center gap-3 mb-4">
                                                     <div className="flex-1 bg-slate-100 rounded-full h-2 overflow-hidden">
                                                         <div 
-                                                            className={`h-full rounded-full transition-all duration-700 ease-out relative ${isFailed ? 'bg-red-500' : 'bg-blue-600'}`}
+                                                            className={`h-full rounded-full transition-all duration-700 ease-out relative ${isFailed ? 'bg-red-500' : isResearched ? 'bg-amber-500' : 'bg-blue-600'}`}
                                                             style={{ width: `${results.progress || 0}%` }}
                                                         >
                                                             {isRunning && <div className="absolute inset-0 bg-white/30 animate-[shimmer_1.5s_infinite]"></div>}
@@ -319,7 +438,6 @@ export default function ResearchAgentView() {
                                                 </div>
                                             </div>
 
-                                            {/* Right: Logs Terminal */}
                                             <div className="w-full md:w-80 bg-slate-50 rounded-xl border border-slate-200 p-3 h-32 flex flex-col">
                                                 <div className="flex-grow overflow-y-auto custom-scrollbar space-y-1.5 pr-2">
                                                     {results.logs?.slice().reverse().map((log: string, i: number) => (

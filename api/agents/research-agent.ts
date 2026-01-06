@@ -30,7 +30,6 @@ export class ResearchAgent {
         Example: ["The Future of AI in Healthcare", "Sustainable Supply Chain Strategies"]
       `;
       
-      // We use generateBlog method as a generic text generator here since it's just a wrapper around generateContent
       const response = await this.gemini.generateBlog(prompt, "You are a senior content strategist."); 
       
       const cleanText = response.replace(/```json\n?|\n?```/g, '').trim();
@@ -52,13 +51,14 @@ export class ResearchAgent {
     }
   }
 
-  async startResearch(prompt: string, writerId?: number, customInstructions?: string): Promise<number> {
-    // We store customInstructions in the results JSON for now to keep schema simple
+  async startResearch(prompt: string, writerId?: number, customInstructions?: string, scanVolume: number = 5): Promise<number> {
     const initialData = { 
         progress: 0, 
         logs: [], 
         writerId,
-        customInstructions 
+        customInstructions,
+        scanVolume,
+        researchData: "" 
     };
 
     await this.db.execute(
@@ -69,7 +69,8 @@ export class ResearchAgent {
     return res?.id || 0;
   }
 
-  async executeResearch(taskId: number) {
+  // Phase 1: Research
+  async performResearch(taskId: number) {
     const jobId = await this.orchestrator.startJob('researcher');
     try {
       await this.db.execute("UPDATE research_tasks SET status = 'researching' WHERE id = ?", [taskId]);
@@ -77,6 +78,8 @@ export class ResearchAgent {
       const task = await this.db.queryOne<any>('SELECT * FROM research_tasks WHERE id = ?', [taskId]);
       const taskData = JSON.parse(task.results || '{}');
       const query = task.query;
+      const scanDepth = taskData.scanVolume || 5;
+      const insightsPerAngle = Math.max(1, Math.floor(scanDepth / 3)) + 1;
 
       const updateProgress = async (p: number, msg: string) => {
         taskData.progress = p;
@@ -86,94 +89,144 @@ export class ResearchAgent {
         await this.orchestrator.updateProgress(jobId, p, msg);
       };
 
-      await updateProgress(10, `Starting deep research on: ${query}`);
+      await updateProgress(10, `Starting deep research on: ${query} (Depth: ${scanDepth})`);
 
       // Phase 1: Context & Strategy
       const strategyPrompt = `Analyze this topic: "${query}" and the custom instructions: "${taskData.customInstructions || 'None'}". Plan 3 key research angles.`;
-      await this.gemini.generateBlog(strategyPrompt, "You are a lead researcher."); // Warm up / Strategy
+      await this.gemini.generateBlog(strategyPrompt, "You are a lead researcher.");
       await updateProgress(20, "Research strategy defined.");
 
       // Phase 2: Main Topic Research (Search)
-      const mainInsights = await this.gemini.researchTopic(query);
-      await updateProgress(40, "Core data gathered from web.");
+      const mainInsights = await this.gemini.researchTopic(query, insightsPerAngle);
+      await updateProgress(40, `Core data gathered from web (${insightsPerAngle} sources).`);
 
       // Phase 3: Trends & Stats
-      const trendInsights = await this.gemini.researchTopic(`${query} latest statistics and future trends 2025`);
-      await updateProgress(60, "Statistical analysis complete.");
+      const trendInsights = await this.gemini.researchTopic(`${query} latest statistics and future trends 2025`, insightsPerAngle);
+      await updateProgress(70, "Statistical analysis complete.");
 
       // Phase 4: Competitor/Market Angle
-      const marketInsights = await this.gemini.researchTopic(`${query} challenges and opportunities`);
-      await updateProgress(75, "Market context analyzed.");
+      const marketInsights = await this.gemini.researchTopic(`${query} challenges and opportunities`, insightsPerAngle);
+      await updateProgress(90, "Market context analyzed.");
 
       const allResearch = [...mainInsights, ...trendInsights, ...marketInsights].join("\n\n");
       
-      // Select Writer
-      let writer: Writer | null = null;
-      if (taskData.writerId) {
-        writer = await this.db.queryOne<Writer>('SELECT * FROM writers WHERE id = ?', [taskData.writerId]);
-      } 
-      if (!writer) writer = await this.db.queryOne<Writer>('SELECT * FROM writers WHERE is_default = 1');
-      if (!writer) {
-        const writers = await this.db.query<Writer>('SELECT * FROM writers LIMIT 1');
-        writer = writers[0];
-      }
-
-      if (!writer) throw new Error("No writer found");
-
-      await updateProgress(85, `Drafting comprehensive report with writer: ${writer.name}`);
-      const company = await this.db.queryOne<CompanySettings>('SELECT * FROM company_settings WHERE id = 1');
-
-      // Generate Blog/Report
-      const prompt = `
-        Create a comprehensive, deep-dive research article about: ${query}.
-        
-        RESEARCH DATA (Use this as your source of truth):
-        ${allResearch}
-
-        COMPANY CONTEXT:
-        ${company?.name} - ${company?.industry}
-        ${company?.product_info}
-
-        CUSTOM INSTRUCTIONS:
-        ${taskData.customInstructions || 'None'}
-
-        WRITING RULES:
-        - Integrate the research data, statistics, and trends naturally.
-        - Cite sources where possible (based on the research data provided).
-        - Maintain a ${writer.personality} tone and ${writer.style} style.
-        - Structure with clear H2 and H3 headers.
-        - Conclude with actionable takeaways.
-      `;
-
-      const systemInstruction = `You are ${writer.name}. Bio: ${writer.bio}. You are an expert researcher and writer.`;
+      // Store Research
+      taskData.researchData = allResearch;
+      taskData.progress = 100;
+      taskData.logs.push("Research phase complete. Ready to write.");
       
-      const content = await this.gemini.generateBlog(prompt, systemInstruction);
-      const metadata = await this.gemini.extractMetadata(content);
-      const slug = createSlug(metadata.title);
-
-      await this.db.execute(
-        `INSERT INTO blogs (title, slug, content, writer_id, status, created_at, views) VALUES (?, ?, ?, ?, 'draft', CURRENT_TIMESTAMP, 0)`,
-        [metadata.title, slug, content, writer.id]
-      );
-
-      await updateProgress(100, "Research mission accomplished.");
-      await this.db.execute("UPDATE research_tasks SET status = 'completed' WHERE id = ?", [taskId]);
+      await this.db.execute("UPDATE research_tasks SET status = 'researched', results = ? WHERE id = ?", [JSON.stringify(taskData), taskId]);
       
-      await this.orchestrator.createNotification({
-          type: 'success',
-          category: 'research',
-          title: 'Research Complete',
-          message: `Deep dive on "${metadata.title}" is ready.`,
-          related_job_id: jobId,
-          action_text: 'Read Report'
-      });
-
-      await this.orchestrator.completeJob(jobId, 'success', 'Research report generated.');
+      await this.orchestrator.completeJob(jobId, 'success', 'Research complete. Ready for report generation.');
 
     } catch (error: any) {
       await this.db.execute("UPDATE research_tasks SET status = 'failed' WHERE id = ?", [taskId]);
       await this.orchestrator.log(jobId, `Error: ${error.message}`);
       await this.orchestrator.completeJob(jobId, 'failed', error.message);
     }
+  }
+
+  // Phase 2: Generation Wrapper
+  async generateReportWithJobId(taskId: number, options: { writerId?: number, length: string, relation: string }): Promise<{ jobId: number, work: Promise<void> }> {
+      const jobId = await this.orchestrator.startJob('writer');
+      
+      const work = async () => {
+        try {
+            const task = await this.db.queryOne<any>('SELECT * FROM research_tasks WHERE id = ?', [taskId]);
+            if (!task) throw new Error("Task not found");
+            
+            const taskData = JSON.parse(task.results || '{}');
+            const query = task.query;
+            const researchData = taskData.researchData || "No research data found.";
+
+            await this.orchestrator.updateProgress(jobId, 10, "Loading research context...");
+
+            // Select Writer
+            let writerId = options.writerId || taskData.writerId;
+            let writer: Writer | null = null;
+            
+            if (writerId) {
+                writer = await this.db.queryOne<Writer>('SELECT * FROM writers WHERE id = ?', [writerId]);
+            } 
+            if (!writer) writer = await this.db.queryOne<Writer>('SELECT * FROM writers WHERE is_default = 1');
+            if (!writer) {
+                const writers = await this.db.query<Writer>('SELECT * FROM writers LIMIT 1');
+                writer = writers[0];
+            }
+            if (!writer) throw new Error("No writer found");
+
+            await this.orchestrator.log(jobId, `Writer assigned: ${writer.name}`);
+            await this.orchestrator.updateProgress(jobId, 30, `Drafting report (${options.length}, ${options.relation} relation)...`);
+
+            const company = await this.db.queryOne<CompanySettings>('SELECT * FROM company_settings WHERE id = 1');
+
+            // Logic for Length
+            let lengthInstruction = "1500-2000 words, comprehensive";
+            if (options.length === 'short') lengthInstruction = "800-1000 words, concise summary";
+            if (options.length === 'long') lengthInstruction = "2500+ words, extensive deep dive";
+
+            // Logic for Relation
+            let relationInstruction = "Mention the company contextually.";
+            if (options.relation === 'low') relationInstruction = "Keep it purely educational/editorial. No sales pitch.";
+            if (options.relation === 'high') relationInstruction = `Strongly connect findings to ${company?.name}'s solutions. High commercial intent.`;
+
+            const prompt = `
+                Create a comprehensive research article/report about: ${query}.
+                
+                RESEARCH DATA SOURCE (Use strictly):
+                ${researchData}
+
+                COMPANY CONTEXT:
+                ${company?.name} - ${company?.industry}
+                ${company?.product_info}
+
+                CONFIGURATION:
+                - Length: ${lengthInstruction}
+                - Brand Relation: ${relationInstruction}
+                - Custom Instructions: ${taskData.customInstructions || 'None'}
+
+                WRITING RULES:
+                - Maintain a ${writer.personality} tone and ${writer.style} style.
+                - Structure with clear H2 and H3 headers.
+                - Synthesize the research data into a coherent narrative.
+                - Conclude with actionable takeaways.
+            `;
+
+            const systemInstruction = `You are ${writer.name}. Bio: ${writer.bio}. You are an expert researcher and writer.`;
+            
+            const content = await this.gemini.generateBlog(prompt, systemInstruction);
+            
+            await this.orchestrator.updateProgress(jobId, 80, "Optimizing metadata...");
+            const metadata = await this.gemini.extractMetadata(content);
+            const slug = createSlug(metadata.title);
+
+            await this.db.execute(
+                `INSERT INTO blogs (title, slug, content, writer_id, status, created_at, views) VALUES (?, ?, ?, ?, 'draft', CURRENT_TIMESTAMP, 0)`,
+                [metadata.title, slug, content, writer.id]
+            );
+
+            // Update Task to Completed
+            taskData.progress = 100;
+            taskData.logs.push(`Report generated: ${metadata.title}`);
+            await this.db.execute("UPDATE research_tasks SET status = 'completed', results = ? WHERE id = ?", [JSON.stringify(taskData), taskId]);
+            
+            await this.orchestrator.createNotification({
+                type: 'success',
+                category: 'research',
+                title: 'Report Ready',
+                message: `Research report "${metadata.title}" created.`,
+                related_job_id: jobId,
+                action_text: 'Read Draft'
+            });
+
+            await this.orchestrator.completeJob(jobId, 'success', `Report "${metadata.title}" created.`);
+
+        } catch (error: any) {
+            await this.orchestrator.log(jobId, `Error: ${error.message}`);
+            await this.orchestrator.completeJob(jobId, 'failed', error.message);
+        }
+      };
+
+      return { jobId, work: work() };
   }
 }

@@ -84,7 +84,7 @@ export interface UserSettings {
 export interface ResearchTask {
   id: number;
   query: string;
-  status: 'pending' | 'researching' | 'completed' | 'failed';
+  status: 'pending' | 'researching' | 'researched' | 'completed' | 'failed';
   results: string; // JSON result from Gemini
   created_at: string;
 }
@@ -95,7 +95,8 @@ export interface FeatureAnnouncement {
   feature_name: string;
   description: string;
   custom_instructions?: string;
-  status: 'draft' | 'processed';
+  research_data?: string; // Phase 1 results
+  status: 'draft' | 'analyzed' | 'processed'; // Added 'analyzed' state
   created_at: string;
 }
 
