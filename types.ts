@@ -1,6 +1,6 @@
 
 // Navigation Types
-export type AppView = 'landing' | 'auth' | 'dashboard' | 'updates' | 'blog' | 'guide' | 'support' | 'api' | 'privacy' | 'terms';
+export type AppView = 'landing' | 'auth' | 'onboarding' | 'dashboard' | 'updates' | 'blog' | 'guide' | 'support' | 'api' | 'privacy' | 'terms';
 
 // Environment Bindings
 export interface Env {

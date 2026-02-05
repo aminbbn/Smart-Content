@@ -1,9 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
 import Dashboard from './components/Dashboard';
 import ErrorBoundary from './components/ErrorBoundary';
 import LandingPage from './components/LandingPage';
 import AuthPage from './components/AuthPage';
 import InfoPage from './components/InfoPage';
+import Onboarding from './components/Onboarding';
 import { AppView } from './types';
 
 export default function App() {
@@ -20,7 +22,10 @@ export default function App() {
       case 'landing':
         return <LandingPage onNavigate={navigate} />;
       case 'auth':
-        return <AuthPage onLogin={() => navigate('dashboard')} onBack={() => navigate('landing')} />;
+        // Redirect to onboarding after login
+        return <AuthPage onLogin={() => navigate('onboarding')} onBack={() => navigate('landing')} />;
+      case 'onboarding':
+        return <Onboarding onComplete={() => navigate('dashboard')} />;
       case 'dashboard':
         return <Dashboard />;
       case 'updates':

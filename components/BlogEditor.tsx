@@ -611,6 +611,14 @@ export default function BlogEditor({ blog, onClose, onSave }: BlogEditorProps) {
                 /* List Tweaks */
                 .editor-content ul { list-style-type: disc; padding-left: 1.5em; margin-bottom: 1em; }
                 .editor-content ol { list-style-type: decimal; padding-left: 1.5em; margin-bottom: 1em; }
+
+                /* Placeholder */
+                .editor-content:empty:before {
+                    content: attr(data-placeholder);
+                    color: #94a3b8;
+                    pointer-events: none;
+                    display: block;
+                }
             `}</style>
 
             {/* 1. Top Navigation Bar */}
@@ -699,7 +707,7 @@ export default function BlogEditor({ blog, onClose, onSave }: BlogEditorProps) {
                             ref={editorRef}
                             onClick={handleEditorClick}
                             onInput={() => { /* Handle changes if needed for auto-save later */ }}
-                            placeholder="Start writing your amazing content here..."
+                            data-placeholder="Start writing your amazing content here..."
                             spellCheck={false}
                         >
                         </div>
